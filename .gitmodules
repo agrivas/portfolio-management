@@ -1,0 +1,3 @@
+[submodule "advanced-ta"]
+	path = advanced-ta
+	url = https://github.com/agrivas/advanced-ta.git

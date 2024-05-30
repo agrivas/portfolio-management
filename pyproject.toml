@@ -3,13 +3,18 @@ name = "portfolio-management"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "~3.10"
 notebook = "^6.4.12"
-pandas = "^1.4.2"
+pandas = "^2.2.2"
 matplotlib = "^3.5.2"
 scipy = "^1.8.1"
+ipywidgets = "^8.1.3"
+ipympl = "^0.9.4"
+advanced-ta = {path = "./advanced-ta"}
+yfinance = "^0.2.40"
 
 [tool.poetry.dev-dependencies]
 

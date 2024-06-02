@@ -69,7 +69,6 @@ app.layout = html.Div([
 
 @app.callback(Output('fig', 'figure'),
               Input('dropdown', 'value'))
-
 def update_graph(ticker):
     return draw_chart(data, ticker)
 

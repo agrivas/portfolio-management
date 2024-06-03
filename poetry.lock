@@ -2,7 +2,7 @@
 
 [[package]]
 name = "advanced-ta"
-version = "0.1.12"
+version = "0.1.17"
 description = "Python implementation of Lorentzian Classification algorithm."
 optional = false
 python-versions = "^3.10"

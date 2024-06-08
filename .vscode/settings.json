@@ -1,0 +1,20 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.pythonPath": ".venv/bin/python",
+        "python.autoComplete.extraPaths": [
+            "${workspaceFolder}/robo-trader",
+            "${workspaceFolder}/.venv/python3.10/site-packages"
+        ],
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": false,
+        "python.linting.mypyEnabled": false,
+        "python.analysis.autoSearchPaths": true,
+        "python.analysis.useImportHeuristic": true
+    }
+}

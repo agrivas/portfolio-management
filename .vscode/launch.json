@@ -10,8 +10,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal",
-            "pythonPath": "/workspaces/portfolio-management/.venv/bin/python"
+            "console": "integratedTerminal"
         }
     ]
 }

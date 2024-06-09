@@ -158,8 +158,6 @@ class LorentzianStrategy:
         if self.settings.use_MFI:
             features.append(MFI(prices['high'], prices['low'], prices['close'], prices['volume'], self.settings.MFI_param1))
 
-        prices.to_csv('prices.csv', index=False)
-
         lc = LorentzianClassification(
             prices,    
             features,

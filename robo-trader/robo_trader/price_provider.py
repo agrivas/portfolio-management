@@ -4,17 +4,21 @@ from datetime import datetime
 from abc import ABC, abstractmethod
 import pandas as pd
 
+from enum import Enum
+
+class Interval(Enum):
+    ONE_MINUTE = '1m'
+    FIVE_MINUTES = '5m'
+    FIFTEEN_MINUTES = '15m'
+    THIRTY_MINUTES = '30m'
+    ONE_HOUR = '1h'
+    ONE_DAY = '1d'
+    ONE_WEEK = '1wk'
+    ONE_MONTH = '1mo'
+
 class PriceProvider(ABC):
-    def __init__(self, symbol: str):
-        """
-        Initialize the PriceProvider with a specific symbol.
-
-        :param symbol: The trading symbol for which prices will be provided.
-        """
-        self.symbol = symbol
-
     @abstractmethod
-    def get_prices(self, symbol: str, interval: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+    def get_prices(self, symbol: str, interval: Interval, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
         """
         Abstract method to fetch price data for a given symbol over a specified interval and time range.
 

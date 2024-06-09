@@ -1,7 +1,7 @@
 # robo_trader/portfolio.py
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from .types import TradeAction
 from .exchange import Exchange, DummyExchange
 
@@ -11,12 +11,13 @@ class Portfolio:
     def __init__(self,
                  symbol: str,
                  exchange: Exchange,
-                 inception_date: datetime = datetime.now(),
+                 inception_date: datetime = datetime.now(timezone.utc),
                  initial_cash: float = 1000.0,
                  initial_tokens: float = 0,
                  transaction_costs: float = 0.004,
                  stop_loss_percentage: float = 0.1,
-                 cash_reserve_percentage: float = .5):
+                 cash_reserve_percentage: float = .5,
+                 minimum_cash_reserve: float = 10.0):
         self.symbol = symbol
         self.exchange = exchange
         self.initial_cash = initial_cash
@@ -27,6 +28,7 @@ class Portfolio:
         self.cash = initial_cash
         self.tokens = initial_tokens
         self.inception_date = inception_date
+        self.minimum_cash_reserve = minimum_cash_reserve
         
         self.trades = []  # List to keep track of all trades
         self.filename = f'portfolio_{symbol}_{inception_date.strftime(DATE_FORMAT)}.json'
@@ -40,32 +42,8 @@ class Portfolio:
         return obj
 
     def calculate_amount_to_buy(self, price: float):
-        # keep 10 in cash reserve
-        return (self.cash - 10) / (price * (1 + self.transaction_costs))
-
-    def calculate_amount_to_sell(self, price: float):
-        trade_amount = 0
-
-        if self.tokens > 0:
-            # Calculate the current value of the asset
-            current_asset_value = self.tokens * price
-
-            # Calculate the cash reserve required based on cash_reserve_percentage
-            cash_reserve_required = (self.cash + current_asset_value) * self.cash_reserve_percentage
-
-            # Check if selling the entire asset is necessary to restore cash reserve
-            if self.cash < cash_reserve_required:
-                # Sell only the required amount to restore cash reserve
-                residual_holding = self.tokens - ((cash_reserve_required - self.cash) / price)
-                trade_amount = self.tokens - residual_holding
-            else:
-                # Sell all of the asset
-                trade_amount = self.tokens
-
-            # Ensure trade amount is not negative
-            trade_amount = max(trade_amount, 0)
-
-        return trade_amount
+        # keep a minimum cash reserve
+        return (self.cash - self.minimum_cash_reserve) / (price * (1 + self.transaction_costs))
 
     def buy(self):
         price = self.get_current_price()
@@ -78,13 +56,9 @@ class Portfolio:
                 # record the trade
                 self.record_trade(TradeAction.BUY, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
 
-    def backtest_buy(self, price: float, trade_date: datetime):
-        trade_amount = self.calculate_amount_to_buy(price)
-        cost = self.calculate_trade_cost(trade_amount, price)
-
-        if trade_amount > 0:
-            # record the trade
-            self.record_trade(TradeAction.BUY, trade_amount, price, trade_date, cost)
+    def calculate_amount_to_sell(self, price: float):
+        # Sell all the tokens if any are available
+        return max(self.tokens, 0)
 
     def sell(self):
         price = self.get_current_price()
@@ -97,17 +71,50 @@ class Portfolio:
                 # record the trade
                 self.record_trade(TradeAction.SELL, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
 
-    def backtest_sell(self, price: float, trade_date: datetime):
-        trade_amount = self.calculate_amount_to_sell(price)
-        cost = self.calculate_trade_cost(trade_amount, price)
+    def calculate_trade_action_to_rebalance(self, price: float):
+        # Calculate the total value of the portfolio (cash + value of tokens)
+        total_value = self.cash + (self.tokens * price)
+        
+        # Calculate the target cash reserve based on the total value and the cash reserve percentage
+        target_cash_reserve = (total_value - self.minimum_cash_reserve) * self.cash_reserve_percentage
+        
+        # Determine the amount of cash needed to reach the target cash reserve
+        cash_needed_to_rebalance = target_cash_reserve - self.cash
+        
+        # If the cash needed to rebalance is less than the minimum cash reserve, do not rebalance
+        if abs(cash_needed_to_rebalance) < self.minimum_cash_reserve:
+            return None, 0
+        
+        # Calculate the amount of tokens to buy or sell to rebalance the cash reserve
+        if cash_needed_to_rebalance > 0:
+            # Need to sell tokens to increase cash
+            amount_to_trade = cash_needed_to_rebalance / (price * (1 + self.transaction_costs))
+            trade_action = TradeAction.SELL
+        else:
+            # Need to buy tokens to decrease cash
+            amount_to_trade = -cash_needed_to_rebalance / (price * (1 + self.transaction_costs))
+            trade_action = TradeAction.BUY
+        
+        # Ensure the trade amount is not negative and does not exceed the tokens available if selling
+        amount_to_trade = max(min(amount_to_trade, self.tokens if trade_action == 'SELL' else float('inf')), 0)
+        
+        return trade_action, amount_to_trade
 
-        if trade_amount > 0:
-            # record the trade
-            self.record_trade(TradeAction.SELL, trade_amount, price, trade_date, cost)
+    def rebalance(self):
+        price = self.get_current_price()
+        trade_action, amount_to_trade = self.calculate_trade_action_to_rebalance(price)
+
+        if amount_to_trade > 0 and trade_action is not None:
+            exchange_trade = self.exchange.execute_trade(self.symbol, trade_action, amount_to_trade)
+            
+            if exchange_trade.success:
+                # record the trade
+                self.record_trade(trade_action, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
+        else:
+            print("No trade needed for rebalancing.")
 
     def get_current_price(self):
-        # TODO: Get price from API
-        return 100
+        return self.exchange.get_current_price(self.symbol)
     
     def calculate_trade_cost(self, trade_amount: float, price: float):
         # Get the cost of a transaction
@@ -161,7 +168,7 @@ class Portfolio:
 
     def get_last_trade_before(self, date: datetime):
         for trade in reversed(self.trades):
-            trade_date = datetime.strptime(trade['date'], DATE_FORMAT)
+            trade_date = self.strptime_utc(trade['date'], DATE_FORMAT)
             if trade_date < date:
                 return trade
         return None
@@ -185,7 +192,7 @@ class Portfolio:
                 saved_state = json.load(f)
                 for key, value in saved_state.items():
                     if key == 'inception_date':
-                        setattr(self, key, datetime.strptime(value, DATE_FORMAT))
+                        setattr(self, key, self.strptime_utc(value, DATE_FORMAT))
                     else:
                         setattr(self, key, value)
 
@@ -194,3 +201,7 @@ class Portfolio:
         
     def __str__(self):
         return f"Cash: {self.cash}, Tokens: {self.tokens}, Trades: {self.trades}"
+
+    @staticmethod
+    def strptime_utc(date_str, date_format):
+        return datetime.strptime(date_str, date_format).replace(tzinfo=timezone.utc)

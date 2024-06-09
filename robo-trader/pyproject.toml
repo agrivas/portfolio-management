@@ -8,6 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pandas = "^2.2.2"
+yfinance = "^0.2.40"
+advanced-ta = {path = "../advanced-ta"}
+ta = "^0.11.0"
 
 
 [tool.poetry.group.dev.dependencies]

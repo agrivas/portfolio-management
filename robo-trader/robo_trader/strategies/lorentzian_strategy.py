@@ -6,7 +6,6 @@ from ta.volume import money_flow_index as MFI
 import pandas as pd
 from datetime import datetime
 
-
 @dataclass
 class LorentzianSettings:
     neighborsCount:int = 8
@@ -51,11 +50,12 @@ class LorentzianStrategy:
         self.last_price_point = None
         self.last_prediction = None
 
-    def backtest(self, start_date: datetime, end_date: datetime):
+    def backtest(self, start_date: datetime, end_date: datetime, period: int = None):
         """
         Replay historical data from the price provider as if we received one point at a time.
         Track the price of the asset on the first date and the valuation of the portfolio.
         Record them again at the end of the period, calculate the returns for both and return them in a dict.
+        Additionally, calculate discrete performance every 'period' prices if specified.
         """
         prices = self.price_provider.get_prices(self.symbol, self.interval, start_date, end_date)
         if prices.empty:
@@ -66,9 +66,25 @@ class LorentzianStrategy:
         initial_date = prices.index[0]
         initial_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=initial_price, valuation_point=initial_date)
 
-        for index, price_point in prices.iterrows():
+        discrete_returns = []
+        for index, price_point in enumerate(prices.itertuples(), 1):
             self.last_price_point = price_point
-            self.evaluate_market(prices.loc[:index])
+            self.evaluate_market(prices.iloc[:index])
+
+            if period is not None and index % period == 0:
+                current_price = price_point.close
+                current_date = price_point.Index
+                current_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=current_price, valuation_point=current_date)
+                price_return = (current_price - initial_price) / initial_price
+                portfolio_return = (current_portfolio_valuation - initial_portfolio_valuation) / initial_portfolio_valuation
+
+                discrete_returns.append({
+                    'period_end_date': current_date,
+                    'current_price': current_price,
+                    'price_return': price_return,
+                    'current_portfolio_valuation': current_portfolio_valuation,
+                    'portfolio_return': portfolio_return
+                })
 
         final_price = prices.iloc[-1]['close']
         final_date = prices.index[-1]
@@ -83,7 +99,8 @@ class LorentzianStrategy:
             'price_return': price_return,
             'initial_portfolio_valuation': initial_portfolio_valuation,
             'final_portfolio_valuation': final_portfolio_valuation,
-            'portfolio_return': portfolio_return
+            'portfolio_return': portfolio_return,
+            'discrete_returns': discrete_returns
         }
 
     def run(self):

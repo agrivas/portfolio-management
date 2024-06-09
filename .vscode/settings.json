@@ -16,5 +16,10 @@
         "python.linting.mypyEnabled": false,
         "python.analysis.autoSearchPaths": true,
         "python.analysis.useImportHeuristic": true
-    }
+    },
+    "python.testing.pytestArgs": [
+        "robo-trader"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

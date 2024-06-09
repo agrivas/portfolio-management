@@ -1,5 +1,4 @@
 /notebooks/.ipynb_checkpoints
 /data/kraken
 /data/lorentzian
-/robo-trader/robo_trader/__pycache__
-/robo-trader/tests/__pycache__
+**/__pycache__/

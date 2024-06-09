@@ -1,54 +1,27 @@
 # robo_trader/price_provider.py
 
+from datetime import datetime
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
 import pandas as pd
-import random
-from .types import Ohlcv
 
 class PriceProvider(ABC):
     def __init__(self, symbol: str):
+        """
+        Initialize the PriceProvider with a specific symbol.
+
+        :param symbol: The trading symbol for which prices will be provided.
+        """
         self.symbol = symbol
 
     @abstractmethod
-    def get_latest_price(self) -> pd.Series:
+    def get_prices(self, symbol: str, interval: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """
+        Abstract method to fetch price data for a given symbol over a specified interval and time range.
+
+        :param symbol: The trading symbol for which prices are to be fetched.
+        :param interval: The interval at which prices should be fetched (e.g., '1m', '5m', '1h').
+        :param start_date: The starting date from which prices should be fetched (inclusive).
+        :param end_date: The ending date until which prices should be fetched (inclusive).
+        :return: A DataFrame containing the price data.
+        """
         pass
-
-    @abstractmethod
-    def get_latest_ohlcv(self) -> pd.DataFrame:
-        pass
-
-class DummyPriceProvider(PriceProvider):
-    def __init__(self, symbol: str):
-        super().__init__(symbol)
-        self.current_Ohlcv = pd.Series({
-            Ohlcv.DATE: datetime.now(timezone.utc),
-            Ohlcv.OPEN: random.uniform(90, 110),
-            Ohlcv.HIGH: random.uniform(90, 110),
-            Ohlcv.LOW: random.uniform(90, 110),
-            Ohlcv.CLOSE: random.uniform(90, 110),
-            Ohlcv.VOLUME: random.randint(1000, 10000)
-        })
-
-    def get_latest_price(self) -> pd.Series:
-        # Simulate getting the latest Ohlcv price for the given symbol
-        self.current_Ohlcv[Ohlcv.OPEN] = random.uniform(90, 110)
-        self.current_Ohlcv[Ohlcv.HIGH] = random.uniform(90, 110)
-        self.current_Ohlcv[Ohlcv.LOW] = random.uniform(90, 110)
-        self.current_Ohlcv[Ohlcv.CLOSE] = random.uniform(90, 110)
-        self.current_Ohlcv[Ohlcv.VOLUME] = random.randint(1000, 10000)
-        self.current_Ohlcv[Ohlcv.DATE] = datetime.now(timezone.utc)
-        return self.current_Ohlcv
-
-    def get_latest_ohlcv(self) -> pd.DataFrame:
-        # Simulate getting the latest Ohlcv for the given symbol
-        now = datetime.now(timezone.utc)
-        Ohlcv_data = {
-            Ohlcv.DATE: [now],
-            Ohlcv.OPEN: [random.uniform(90, 110)],
-            Ohlcv.HIGH: [random.uniform(90, 110)],
-            Ohlcv.LOW: [random.uniform(90, 110)],
-            Ohlcv.CLOSE: [random.uniform(90, 110)],
-            Ohlcv.VOLUME: [random.randint(1000, 10000)]
-        }
-        return pd.DataFrame(Ohlcv_data)

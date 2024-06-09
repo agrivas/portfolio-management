@@ -1,5 +1,6 @@
 # robo_trader/types.py
 
+from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass
 from json import JSONEncoder
@@ -16,6 +17,15 @@ class Ohlcv:
     LOW = 'low'
     CLOSE = 'close'
     VOLUME = 'volume'
+
+@dataclass
+class Trade:
+    action: TradeAction
+    success: bool
+    trade_amount: float
+    price: float
+    date: datetime
+    cost: float
 
 # Custom JSON Encoder that handles Enums
 class EnhancedJSONEncoder(JSONEncoder):

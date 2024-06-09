@@ -3,9 +3,8 @@
 robo_trader package
 """
 
-from .portfolio_manager import PortfolioManager
+from .portfolio import Portfolio
 from .price_provider import PriceProvider
-from .robo_trader import RoboTrader
-from .signal_generator import SignalGenerator
+from .exchange import Exchange
 
-__all__ = ["PortfolioManager", "PriceProvider", "RoboTrader", "SignalGenerator"]
+__all__ = ["Portfolio", "PriceProvider", "Exchange"]

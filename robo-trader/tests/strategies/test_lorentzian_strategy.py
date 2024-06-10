@@ -25,12 +25,13 @@ def test_backtest(setup_strategy):
     start_date = (datetime.now(timezone.utc) - timedelta(days=366)).replace(minute=0, second=0, microsecond=0)
     end_date = (datetime.now(timezone.utc) - timedelta(days=359)).replace(minute=0, second=0, microsecond=0)
 
-    result = strategy.backtest(start_date, end_date, period = 24)
+    result_df = strategy.backtest(start_date, end_date, period=24)
     
-    assert isinstance(result['initial_price'], (int, float))
-    assert isinstance(result['final_price'], (int, float))
-    assert isinstance(result['price_return'], (int, float))
-    assert isinstance(result['initial_portfolio_valuation'], (int, float))
-    assert isinstance(result['final_portfolio_valuation'], (int, float))
-    assert isinstance(result['portfolio_return'], (int, float))
-    assert len(result['discrete_returns']) == 7
+    assert isinstance(result_df, pd.DataFrame)
+    assert 'price_start' in result_df.columns
+    assert 'price_end' in result_df.columns
+    assert 'asset_return' in result_df.columns
+    assert 'valuation_start' in result_df.columns
+    assert 'valuation_end' in result_df.columns
+    assert 'portfolio_return' in result_df.columns
+    assert len(result_df) == 8  # 7 discrete returns + 1 for the whole period

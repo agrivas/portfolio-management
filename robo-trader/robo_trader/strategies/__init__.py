@@ -1,6 +1,5 @@
-from .lorentzian_strategy import *
+from .lorentzian_strategy import LorentzianStrategy, LorentzianSettings, LorentzianOptimizer, LorentzianOptimizerSettings
 
 __all__ = [
-    'LorentzianStrategy', 'LorentzianSettings'
+    'LorentzianStrategy', 'LorentzianSettings', 'LorentzianOptimizer', 'LorentzianOptimizerSettings'
 ]
-

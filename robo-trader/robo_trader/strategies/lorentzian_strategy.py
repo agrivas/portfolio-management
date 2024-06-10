@@ -46,6 +46,40 @@ class LorentzianSettings:
     use_MFI:bool = True
     MFI_param1:int = 14
 
+@dataclass
+class LorentzianOptimizerSettings:
+    neighborsCount: range
+    maxBarsBack: range
+    useDynamicExits: range
+    useEmaFilter: range
+    emaPeriod: range
+    useSmaFilter: range
+    smaPeriod: range
+    useKernelSmoothing: range
+    lookbackWindow: range
+    relativeWeight: range
+    regressionLevel: range
+    crossoverLag: range
+    useVolatilityFilter: range
+    useRegimeFilter: range
+    useAdxFilter: range
+    regimeThreshold: range
+    adxThreshold: range
+    use_RSI: range
+    RSI_param1: range
+    RSI_param2: range
+    use_WT: range
+    WT_param1: range
+    WT_param2: range
+    use_CCI: range
+    CCI_param1: range
+    CCI_param2: range
+    use_ADX: range
+    ADX_param1: range
+    ADX_param2: range
+    use_MFI: range
+    MFI_param1: range
+
 class LorentzianStrategy(Strategy):
     def __init__(self, symbol: str, price_provider: PriceProvider, interval: Interval, portfolio: Portfolio, settings: LorentzianSettings):
         super().__init__(symbol, price_provider, interval, portfolio)
@@ -119,3 +153,32 @@ class LorentzianStrategy(Strategy):
 
         return lc
 
+class LorentzianOptimizer:
+    @staticmethod
+    def optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, start_date=None, end_date=None):
+        best_value = None
+        best_return = float('-inf')
+        
+        for value in value_range:
+            settings = LorentzianSettings(**{setting_name: value})
+            strategy = LorentzianStrategy(symbol, price_provider, interval, portfolio, settings)
+            result_df = strategy.backtest(start_date, end_date)
+            mean_return = result_df['portfolio_return'].mean()
+            
+            if mean_return > best_return:
+                best_return = mean_return
+                best_value = value
+        
+        return best_value
+
+    @staticmethod
+    def get_optimal_settings(symbol, price_provider, interval, portfolio, optimizer_settings: LorentzianOptimizerSettings, start_date=None, end_date=None):
+        optimal_settings = {}
+        for setting_name, value_range in optimizer_settings.__dict__.items():
+            if len(value_range) == 1:
+                optimal_value = value_range[0]
+            else:
+                optimal_value = LorentzianOptimizer.optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, start_date, end_date)
+            optimal_settings[setting_name] = optimal_value
+        
+        return LorentzianSettings(**optimal_settings)

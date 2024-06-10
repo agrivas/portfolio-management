@@ -18,6 +18,7 @@ yfinance = "^0.2.40"
 requests = "^2.32.3"
 plotly = "^5.22.0"
 dash = "^2.17.0"
+robo-trader = {path = "./robo-trader"}
 
 [tool.poetry.dev-dependencies]
 

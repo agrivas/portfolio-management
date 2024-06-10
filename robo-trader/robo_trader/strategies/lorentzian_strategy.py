@@ -5,6 +5,7 @@ from advanced_ta import LorentzianClassification
 from ta.volume import money_flow_index as MFI
 import pandas as pd
 from datetime import datetime
+import os
 
 @dataclass
 class LorentzianSettings:
@@ -50,7 +51,7 @@ class LorentzianStrategy:
         self.last_price_point = None
         self.last_prediction = None
 
-    def backtest(self, start_date: datetime, end_date: datetime, period: int = None):
+    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None):
         """
         Replay historical data from the price provider as if we received one point at a time.
         Track the price of the asset on the first date and the valuation of the portfolio.
@@ -67,16 +68,18 @@ class LorentzianStrategy:
         initial_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=initial_price, valuation_point=initial_date)
 
         discrete_returns = []
+        last_discrete_price = initial_price
+        last_discrete_portfolio_valuation = initial_portfolio_valuation
         for index, price_point in enumerate(prices.itertuples(), 1):
             self.last_price_point = price_point
-            self.evaluate_market(prices.iloc[:index])
+            self.backtest_evaluate_market(prices.iloc[:index])
 
             if period is not None and index % period == 0:
                 current_price = price_point.close
                 current_date = price_point.Index
                 current_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=current_price, valuation_point=current_date)
-                price_return = (current_price - initial_price) / initial_price
-                portfolio_return = (current_portfolio_valuation - initial_portfolio_valuation) / initial_portfolio_valuation
+                price_return = (current_price - last_discrete_price) / last_discrete_price
+                portfolio_return = (current_portfolio_valuation - last_discrete_portfolio_valuation) / last_discrete_portfolio_valuation
 
                 discrete_returns.append({
                     'period_end_date': current_date,
@@ -85,6 +88,9 @@ class LorentzianStrategy:
                     'current_portfolio_valuation': current_portfolio_valuation,
                     'portfolio_return': portfolio_return
                 })
+
+                last_discrete_price = current_price
+                last_discrete_portfolio_valuation = current_portfolio_valuation
 
         final_price = prices.iloc[-1]['close']
         final_date = prices.index[-1]
@@ -102,6 +108,24 @@ class LorentzianStrategy:
             'portfolio_return': portfolio_return,
             'discrete_returns': discrete_returns
         }
+
+    def backtest_evaluate_market(self, prices):
+        """
+        Evaluate the market conditions based on Lorentzian analysis and decide whether to buy, sell, or rebalance.
+        """
+        market_condition = self.analyze_prices(prices)
+
+        latest_close_price = prices.iloc[-1]['close']
+        latest_date = prices.index[-1]
+
+        if market_condition == 'startLongTrade':
+            self.portfolio.backtest_buy(latest_close_price, latest_date)
+        elif market_condition == 'startShortTrade':
+            self.portfolio.backtest_sell(latest_close_price, latest_date)
+        elif market_condition in ['endLongTrade', 'endShortTrade']:
+            self.portfolio.backtest_rebalance(latest_close_price, latest_date)
+
+        self.last_prediction = market_condition
 
     def run(self):
         """
@@ -141,10 +165,11 @@ class LorentzianStrategy:
         This is a placeholder for the actual Lorentzian analysis.
         """
 
-        if self.settings.use_ADX and len(prices) <= self.settings.ADX_param1 * self.settings.ADX_param2:
+        min_data_for_adx = max(self.settings.ADX_param1, self.settings.adxThreshold) * self.settings.ADX_param2
+        if (self.settings.use_ADX or self.settings.useAdxFilter) and len(prices) <= min_data_for_adx:
             return 'hold'
 
-        lc = self.get_lorentzian_predictions(prices)
+        lc = self.get_lorentzian_predictions(prices)        
         last_price_point_prediction = lc.data.iloc[-1]
 
         if not pd.isna(last_price_point_prediction['endShortTrade']):

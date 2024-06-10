@@ -6,6 +6,7 @@ from .types import TradeAction
 from .exchange import Exchange, DummyExchange
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+SAFE_DATE_FORMAT = '%Y-%m-%d_%H-%M-%S'
 
 class Portfolio:
     def __init__(self,
@@ -31,7 +32,7 @@ class Portfolio:
         self.minimum_cash_reserve = minimum_cash_reserve
         
         self.trades = []  # List to keep track of all trades
-        self.filename = f'portfolio_{symbol}_{inception_date.strftime(DATE_FORMAT)}.json'
+        self.filename = f'portfolio_{symbol}_{inception_date.strftime(SAFE_DATE_FORMAT)}.json'
 
         self.save_state()
 
@@ -56,6 +57,12 @@ class Portfolio:
                 # record the trade
                 self.record_trade(TradeAction.BUY, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
 
+    def backtest_buy(self, price: float, date: datetime):
+        trade_amount = self.calculate_amount_to_buy(price)
+
+        if trade_amount > 0:
+            self.record_trade(TradeAction.BUY, trade_amount, price, date, self.calculate_trade_cost(trade_amount, price))
+
     def calculate_amount_to_sell(self, price: float):
         # Sell all the tokens if any are available
         return max(self.tokens, 0)
@@ -70,6 +77,12 @@ class Portfolio:
             if exchange_trade.success:
                 # record the trade
                 self.record_trade(TradeAction.SELL, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
+
+    def backtest_sell(self, price: float, date: datetime):
+        trade_amount = self.calculate_amount_to_sell(price)
+
+        if trade_amount > 0:
+            self.record_trade(TradeAction.SELL, trade_amount, price, date, self.calculate_trade_cost(trade_amount, price))
 
     def calculate_trade_action_to_rebalance(self, price: float):
         # Calculate the total value of the portfolio (cash + value of tokens)
@@ -110,8 +123,12 @@ class Portfolio:
             if exchange_trade.success:
                 # record the trade
                 self.record_trade(trade_action, exchange_trade.trade_amount, exchange_trade.price, exchange_trade.date, exchange_trade.cost)
-        else:
-            print("No trade needed for rebalancing.")
+
+    def backtest_rebalance(self, price: float, date: datetime):
+        trade_action, amount_to_trade = self.calculate_trade_action_to_rebalance(price)
+
+        if amount_to_trade > 0 and trade_action is not None:
+            self.record_trade(trade_action, amount_to_trade, price, date, self.calculate_trade_cost(amount_to_trade, price))
 
     def get_current_price(self):
         return self.exchange.get_current_price(self.symbol)

@@ -1,4 +1,4 @@
-from .yfinance import YFinancePriceProvider
+from .yfinance import *
 
 __all__ = [
     'YFinancePriceProvider'

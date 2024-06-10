@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from abc import ABC, abstractmethod
 from .types import TradeAction
 from dataclasses import dataclass
@@ -56,7 +56,7 @@ class DummyExchange(Exchange):
         """
         price = self.get_current_price(symbol)
         cost = trade_amount * price * self.transaction_costs
-        trade = Trade(action=trade_action, success=True, trade_amount=trade_amount, price=price, date=datetime.now(), cost=cost)
+        trade = Trade(action=trade_action, success=True, trade_amount=trade_amount, price=price, date=datetime.now(timezone.utc), cost=cost)
         self.trades.append(trade)
         return trade
 

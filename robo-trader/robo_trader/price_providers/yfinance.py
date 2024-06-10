@@ -13,15 +13,16 @@ class YFinancePriceProvider(PriceProvider):
             period = 'max'
 
         ticker_data = yfinance.Ticker(symbol)
+        yfinance_interval = self.map_interval_to_yfinance(interval)
 
         if period is not None:
-            df = ticker_data.history(period=period)
+            df = ticker_data.history(interval=yfinance_interval, period=period)
         else:            
-            yfinance_interval = self.map_interval_to_yfinance(interval)
             df = ticker_data.history(interval=yfinance_interval, start=start_date, end=end_date)
 
         # Rename index to match Ohlcv.DATE and make timezone aware on UTC
-        df.index = df.index.tz_convert('UTC')
+        if not isinstance(df.index, pd.DatetimeIndex):
+            df.index = df.index.tz_convert('UTC')
         df.index.names = [Ohlcv.DATE]
 
         # Rename columns to match Ohlcv enum types

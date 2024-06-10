@@ -2627,7 +2627,7 @@ files = [
 
 [[package]]
 name = "robo-trader"
-version = "0.1.20"
+version = "0.1.22"
 description = ""
 optional = false
 python-versions = "^3.10"

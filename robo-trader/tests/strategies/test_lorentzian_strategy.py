@@ -22,10 +22,11 @@ def setup_strategy():
 def test_backtest(setup_strategy):
     strategy, _, _ = setup_strategy
 
-    start_date = (datetime.now(timezone.utc) - timedelta(days=366)).replace(minute=0, second=0, microsecond=0)
-    end_date = (datetime.now(timezone.utc) - timedelta(days=359)).replace(minute=0, second=0, microsecond=0)
+    train_since = (datetime.now(timezone.utc) - timedelta(days=366)).replace(minute=0, second=0, microsecond=0)
+    start_date = (datetime.now(timezone.utc) - timedelta(days=359)).replace(minute=0, second=0, microsecond=0)
+    end_date = (datetime.now(timezone.utc) - timedelta(days=352)).replace(minute=0, second=0, microsecond=0)
 
-    result_df = strategy.backtest(start_date, end_date, period=24)
+    result_df = strategy.backtest(start_date, end_date, period=24, train_since=train_since)
     
     assert isinstance(result_df, pd.DataFrame)
     assert 'price_start' in result_df.columns
@@ -39,8 +40,9 @@ def test_backtest(setup_strategy):
 def test_get_optimal_settings(setup_strategy):
     _, price_provider, portfolio = setup_strategy
 
-    start_date = (datetime.now(timezone.utc) - timedelta(days=366)).replace(minute=0, second=0, microsecond=0)
-    end_date = (datetime.now(timezone.utc) - timedelta(days=359)).replace(minute=0, second=0, microsecond=0)
+    train_since = (datetime.now(timezone.utc) - timedelta(days=366)).replace(minute=0, second=0, microsecond=0)
+    start_date = (datetime.now(timezone.utc) - timedelta(days=359)).replace(minute=0, second=0, microsecond=0)
+    end_date = (datetime.now(timezone.utc) - timedelta(days=352)).replace(minute=0, second=0, microsecond=0)
 
     optimizer_settings = LorentzianSettings(
         neighborsCount=range(8, 9),
@@ -77,7 +79,7 @@ def test_get_optimal_settings(setup_strategy):
     )
 
     optimal_settings = LorentzianOptimizer.get_optimal_settings(
-        SYMBOL, price_provider, Interval.ONE_HOUR, portfolio, optimizer_settings, start_date, end_date
+        SYMBOL, price_provider, Interval.ONE_HOUR, portfolio, optimizer_settings, start_date=start_date, end_date=end_date, train_since=train_since
     )
 
     assert isinstance(optimal_settings, LorentzianSettings)

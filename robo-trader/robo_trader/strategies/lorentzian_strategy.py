@@ -8,6 +8,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import warnings
+from typing import Optional
 
 # Suppress specific warning from numpy
 warnings.filterwarnings("ignore", message="All-NaN slice encountered")
@@ -16,69 +17,94 @@ warnings.filterwarnings("ignore", message="All-NaN slice encountered")
 class LorentzianSettings:
     neighborsCount:int = 8
     maxBarsBack:int = 2000
-    useDynamicExits:bool = False
-    useEmaFilter:bool = False
-    emaPeriod:int = 200
-    useSmaFilter:bool = False
-    smaPeriod:int = 200
+    
+    use_RSI:bool = True
+    RSI_param1:int = 14
+    RSI_param2:int = 2    
+
+    use_WT:bool = True
+    WT_param1:int = 10
+    WT_param2:int = 11
+
+    use_CCI:bool = True
+    CCI_param1:int = 20
+    CCI_param2:int = 2
+
+    use_ADX:bool = True
+    ADX_param1:int = 20
+    ADX_param2:int = 2
+
+    use_MFI:bool = True
+    MFI_param1:int = 14
+
     useKernelSmoothing:bool = False
     lookbackWindow:int = 8
     relativeWeight:float = 8.0
     regressionLevel:int = 25
     crossoverLag:int = 2
-    useVolatilityFilter:bool = False
+
     useRegimeFilter:bool = False
+    regimeThreshold:float = -0.1
+
     useAdxFilter:bool = False
-    regimeThreshold:float = 0.0
-    adxThreshold:int = 0
-    use_RSI:bool = True
-    RSI_param1:int = 14
-    RSI_param2:int = 2
-    use_WT:bool = True 
-    WT_param1:int = 10
-    WT_param2:int = 11
-    use_CCI:bool = True
-    CCI_param1:int = 20
-    CCI_param2:int = 2
-    use_ADX:bool = True
-    ADX_param1:int = 20
-    ADX_param2:int = 2
-    use_MFI:bool = True
-    MFI_param1:int = 14
+    adxThreshold:int = 20
+
+    useVolatilityFilter:bool = False
+    
+    useEmaFilter:bool = False
+    emaPeriod:int = 200
+
+    useSmaFilter:bool = False
+    smaPeriod:int = 200
+    
+    useDynamicExits:bool = False
+    
 
 @dataclass
 class LorentzianOptimizerSettings:
-    neighborsCount: range
-    maxBarsBack: range
-    useDynamicExits: range
-    useEmaFilter: range
-    emaPeriod: range
-    useSmaFilter: range
-    smaPeriod: range
-    useKernelSmoothing: range
-    lookbackWindow: range
-    relativeWeight: range
-    regressionLevel: range
-    crossoverLag: range
-    useVolatilityFilter: range
-    useRegimeFilter: range
-    useAdxFilter: range
-    regimeThreshold: range
-    adxThreshold: range
-    use_RSI: range
-    RSI_param1: range
-    RSI_param2: range
-    use_WT: range
-    WT_param1: range
-    WT_param2: range
-    use_CCI: range
-    CCI_param1: range
-    CCI_param2: range
-    use_ADX: range
-    ADX_param1: range
-    ADX_param2: range
-    use_MFI: range
-    MFI_param1: range
+    neighborsCount: Optional[range] = None
+    maxBarsBack: Optional[range] = None
+    
+    use_RSI: Optional[range] = None
+    RSI_param1: Optional[range] = None
+    RSI_param2: Optional[range] = None    
+
+    use_WT: Optional[range] = None
+    WT_param1: Optional[range] = None
+    WT_param2: Optional[range] = None
+
+    use_CCI: Optional[range] = None
+    CCI_param1: Optional[range] = None
+    CCI_param2: Optional[range] = None
+
+    use_ADX: Optional[range] = None
+    ADX_param1: Optional[range] = None
+    ADX_param2: Optional[range] = None
+
+    use_MFI: Optional[range] = None
+    MFI_param1: Optional[range] = None
+
+    useKernelSmoothing: Optional[range] = None
+    lookbackWindow: Optional[range] = None
+    relativeWeight: Optional[range] = None
+    regressionLevel: Optional[range] = None
+    crossoverLag: Optional[range] = None
+
+    useRegimeFilter: Optional[range] = None
+    regimeThreshold: Optional[range] = None
+
+    useAdxFilter: Optional[range] = None
+    adxThreshold: Optional[range] = None
+
+    useVolatilityFilter: Optional[range] = None
+    
+    useEmaFilter: Optional[range] = None
+    emaPeriod: Optional[range] = None
+
+    useSmaFilter: Optional[range] = None
+    smaPeriod: Optional[range] = None
+    
+    useDynamicExits: Optional[range] = None
 
 class LorentzianStrategy(Strategy):
     def __init__(self, symbol: str, price_provider: PriceProvider, interval: Interval, portfolio: Portfolio, settings: LorentzianSettings):
@@ -155,30 +181,42 @@ class LorentzianStrategy(Strategy):
 
 class LorentzianOptimizer:
     @staticmethod
-    def optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, start_date=None, end_date=None):
+    def optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, current_settings, start_date=None, end_date=None, period=None, train_since=None):
         best_value = None
         best_return = float('-inf')
         
         for value in value_range:
-            settings = LorentzianSettings(**{setting_name: value})
+            print(f'    Testing {value} for {setting_name}')
+
+            # Update the current setting with the new value
+            updated_settings = {**current_settings, setting_name: value}
+            print(f"        Updated settings: {updated_settings}")
+            settings = LorentzianSettings(**updated_settings)
             strategy = LorentzianStrategy(symbol, price_provider, interval, portfolio, settings)
-            result_df = strategy.backtest(start_date, end_date)
+            result_df = strategy.backtest(start_date, end_date, period, train_since)
             mean_return = result_df['portfolio_return'].mean()
+            print(f"        Mean return: {mean_return}")
             
             if mean_return > best_return:
                 best_return = mean_return
-                best_value = value
+                best_value = value            
         
         return best_value
 
     @staticmethod
-    def get_optimal_settings(symbol, price_provider, interval, portfolio, optimizer_settings: LorentzianOptimizerSettings, start_date=None, end_date=None):
-        optimal_settings = {}
-        for setting_name, value_range in optimizer_settings.__dict__.items():
-            if len(value_range) == 1:
-                optimal_value = value_range[0]
-            else:
-                optimal_value = LorentzianOptimizer.optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, start_date, end_date)
-            optimal_settings[setting_name] = optimal_value
+    def get_optimal_settings(symbol, price_provider, interval, portfolio, optimizer_settings: LorentzianOptimizerSettings, default_settings: LorentzianSettings = None, start_date=None, end_date=None, period=None, train_since=None):
+        if default_settings:
+            optimal_settings_dict = default_settings.__dict__.copy()
+        else:
+            optimal_settings_dict = {}
         
-        return LorentzianSettings(**optimal_settings)
+        for setting_name, value_range in optimizer_settings.__dict__.items():
+            if value_range:  # Check if a range is provided
+                if len(value_range) == 1:
+                    optimal_value = value_range[0]
+                else:
+                    optimal_value = LorentzianOptimizer.optimize_setting(symbol, price_provider, interval, portfolio, setting_name, value_range, optimal_settings_dict, start_date, end_date, period, train_since)
+                print(f"Optimal value for {setting_name} is {optimal_value}")
+                optimal_settings_dict[setting_name] = optimal_value
+        
+        return LorentzianSettings(**optimal_settings_dict)

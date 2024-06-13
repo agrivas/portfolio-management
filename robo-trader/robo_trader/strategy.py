@@ -19,38 +19,54 @@ class Strategy(ABC):
         self.portfolio = portfolio
         self.interval = interval
 
-    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None):
+    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None, train_since: datetime = None):
         """
         Replay historical data from the price provider as if we received one point at a time.
         Track the price of the asset on the first date and the valuation of the portfolio.
         Record them again at the end of the period, calculate the returns for both and return them in a unified dataframe.
         Additionally, calculate discrete performance every 'period' prices if specified, including a row for the whole period.
         """
-        prices = self.price_provider.get_prices(self.symbol, self.interval, start_date, end_date)
+        if train_since and start_date and train_since >= start_date:
+            raise ValueError("train_since must be before start_date")
+
+        prices_since = None
+        if train_since:
+            prices_since = train_since
+        elif start_date:
+            prices_since = start_date
+
+        prices = self.price_provider.get_prices(self.symbol, self.interval, prices_since, end_date)
         if prices.empty:
             print("No historical data available for backtesting.")
             return
 
-        initial_price = prices.iloc[0]['open']
-        initial_date = prices.index[0]
+        start_index = prices.index.get_loc(start_date)
+        initial_price = prices.iloc[start_index]['open']
+        initial_date = prices.index[start_index]
         initial_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=initial_price, valuation_point=initial_date)
 
         returns_data = []
         last_discrete_price = initial_price
         last_discrete_portfolio_valuation = initial_portfolio_valuation
-        for index, price_point in enumerate(prices.itertuples(), 1):
-            self.last_price_point = price_point
-            self.backtest_evaluate_market(prices.iloc[:index])
 
-            if period is not None and index % period == 0 or index == len(prices):
-                current_price = price_point.close
-                current_date = price_point.Index
+        # Iterate from start_index to the end of the frame
+        for index in range(start_index, len(prices)):
+            price_point = prices.iloc[index]
+            self.last_price_point = price_point
+
+            # Pass the frame from the beginning up to the current index (inclusive) to backtest_evaluate_market
+            self.backtest_evaluate_market(prices.iloc[:index+1])
+
+            # Check if we should record the data
+            if (period is not None and (index - start_index) % period == 0):
+                current_price = price_point['close']
+                current_date = prices.index[index]
                 current_portfolio_valuation = self.portfolio.get_valuation(price_at_valuation=current_price, valuation_point=current_date)
                 price_return = (current_price - last_discrete_price) / last_discrete_price
                 portfolio_return = (current_portfolio_valuation - last_discrete_portfolio_valuation) / last_discrete_portfolio_valuation
 
                 returns_data.append({
-                    'start_date': prices.index[max(0, index - period)],
+                    'start_date': prices.index[max(start_index, index - period)],
                     'end_date': current_date,
                     'price_start': last_discrete_price,
                     'price_end': current_price,                    
@@ -62,6 +78,7 @@ class Strategy(ABC):
 
                 last_discrete_price = current_price
                 last_discrete_portfolio_valuation = current_portfolio_valuation
+
 
         # Add row for the whole period
         final_price = prices.iloc[-1]['close']

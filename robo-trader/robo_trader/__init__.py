@@ -1,7 +1,7 @@
+from .trader import Trader
 from .portfolio import Portfolio
-from .price_provider import PriceProvider, Interval
-from .exchange import Exchange, DummyExchange, Trade
-from .types import TradeAction, Ohlcv
-from .strategy import Strategy, TradeSignal, DummyStrategy
+from .strategy import Strategy
+from .broker import Broker, Order, Trade, OrderType, OrderSide, OrderStatus
+from .feed import Feed, Ohlcv
 
-__all__ = ["Portfolio", "PriceProvider", "Exchange", "DummyExchange", "Interval", "TradeAction", "Ohlcv", "Trade", "Strategy", "TradeSignal", "DummyStrategy"]
+__all__ = ["Trader", "Portfolio", "Strategy", "Broker", "Order", "Trade", "OrderType", "OrderSide", "OrderStatus", "Feed", "Ohlcv"]

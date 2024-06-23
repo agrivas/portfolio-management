@@ -1,6 +1,6 @@
 import yfinance
 from datetime import datetime
-from ..feed import Feed, Ohlcv
+from robo_trader.feed import Feed, Ohlcv
 import pandas as pd
 
 class YFinanceFeed(Feed):

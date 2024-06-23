@@ -6,7 +6,7 @@ import numpy as np
 from .feed import Feed
 from .strategy import Strategy
 from .portfolio import Portfolio
-from .broker import Broker, OrderSide, OrderType
+from .broker import Broker
 from .brokers.backtest_broker import BacktestBroker
 
 class Trader:
@@ -44,14 +44,14 @@ class Trader:
             
             time.sleep(60)  # Sleep for a minute
 
-    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None, train_since: datetime = None):
+    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None, train_since: datetime = None, transaction_cost: float = None):
         """
         Replay historical data from the price provider as if we received one point at a time.
         Track the price of the asset on the first date and the valuation of the portfolio.
         Record them again at the end of the period, calculate the returns for both and return them in a unified dataframe.
         Additionally, calculate discrete performance every 'period' prices if specified, including a row for the whole period.
         """
-        backtest_broker = BacktestBroker()
+        backtest_broker = BacktestBroker(transaction_cost if transaction_cost is not None else 0)
         backtest_portfolio = Portfolio(backtest_broker, self.initial_cash)
 
         if train_since and start_date and train_since >= start_date:
@@ -90,28 +90,28 @@ class Trader:
         # Iterate from start_index to the end of the frame
         for index in range(start_index, len(prices)):
             price_point = prices.iloc[index]
-            self.last_price_point = price_point
-
-            # Update backtest broker with current price and timestamp
-            backtest_broker.set_timestamp(index)
-            backtest_broker.set_price(self.symbol, price_point['close'])
-            
-            # Update portfolio before strategy evaluation
-            backtest_portfolio.update()
 
             # Store the portfolio state before strategy evaluation
             prev_holdings = backtest_portfolio.asset_holdings.get(self.symbol, 0)
             prev_portfolio_value = backtest_portfolio.get_valuation(time=prices.index[index], prices={self.symbol: price_point['close']})
 
+            # Update backtest broker with current price and timestamp
+            backtest_broker.set_timestamp(prices.index[index])
+            backtest_broker.set_price(self.symbol, price_point['close'])
+            backtest_broker.update()
+            
+            # Update portfolio before strategy evaluation
+            backtest_portfolio.update()          
+
             # Call evaluate_market on the strategy with prices up to the current index and the trader
-            self.strategy.evaluate_market(prices.iloc[:index+1], self)
+            self.strategy.evaluate_market(self.symbol, prices.iloc[:index+1], backtest_portfolio)
 
             # Check if a long position was opened or closed
             current_holdings = backtest_portfolio.asset_holdings.get(self.symbol, 0)
             if current_holdings > prev_holdings:
-                prices.at[price_point.name, 'open_long'] = True
+                prices.at[prices.index[index], 'open_long'] = True
             elif current_holdings < prev_holdings:
-                prices.at[price_point.name, 'close_long'] = True
+                prices.at[prices.index[index], 'close_long'] = True
                 total_trades += 1
                 current_portfolio_value = backtest_portfolio.get_valuation(time=prices.index[index], prices={self.symbol: price_point['close']})
                 if current_portfolio_value > prev_portfolio_value:
@@ -179,9 +179,14 @@ class Trader:
         sortino_ratio = np.mean(excess_returns) / np.std(downside_returns) if np.std(downside_returns) != 0 else 0
 
         performance_stats = {
+            'initial_value': initial_portfolio_valuation,
+            'final_value': final_portfolio_valuation,
             'win_rate': win_rate,
             'sharpe_ratio': sharpe_ratio,
-            'sortino_ratio': sortino_ratio
+            'sortino_ratio': sortino_ratio,
+            'history': prices,
+            'returns': returns,
+            'orders': backtest_portfolio.orders
         }
 
-        return returns, prices, performance_stats
+        return performance_stats

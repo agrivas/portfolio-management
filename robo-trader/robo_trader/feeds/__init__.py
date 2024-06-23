@@ -1,3 +1,3 @@
-from .yfinance import YfinanceFeed
+from .yfinance import YFinanceFeed
 
-__all__ = ['YfinanceFeed']
+__all__ = ['YFinanceFeed']

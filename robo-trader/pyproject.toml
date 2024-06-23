@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "robo-trader"
-version = "0.1.35"
+version = "0.2.26"
 description = ""
 authors = ["Argiris Grivas <argiris.grivas@gmail.com>"]
 readme = "README.md"

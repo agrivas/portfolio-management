@@ -1,11 +1,12 @@
 from robo_trader.strategy import Strategy
-from robo_trader.trader import Trader
+from robo_trader.portfolio import Portfolio
 from dataclasses import dataclass
 from advanced_ta import LorentzianClassification
 from ta.volume import money_flow_index as MFI
 import pandas as pd
 import warnings
 from typing import Optional
+from robo_trader.trader import Trader
 
 # Suppress specific warning from numpy
 warnings.filterwarnings("ignore", message="All-NaN slice encountered")
@@ -114,13 +115,8 @@ class LorentzianStrategy(Strategy):
     def __init__(self, settings: LorentzianSettings):
         super().__init__()
         self.settings = settings
-        self.last_price_point = None
-        self.last_prediction = None
 
-    def evaluate_market(self, prices: pd.DataFrame, trader: Trader):
-        """
-        Analyze the prices using a Lorentzian function to determine the market condition.
-        """
+    def evaluate_market(self, symbol: str, prices: pd.DataFrame, portfolio: Portfolio):
         min_data_for_adx = max(self.settings.ADX_param1, self.settings.adxThreshold) * self.settings.ADX_param2
         if (self.settings.use_ADX or self.settings.useAdxFilter) and len(prices) <= min_data_for_adx:
             return
@@ -128,16 +124,13 @@ class LorentzianStrategy(Strategy):
         lc = self.get_lorentzian_predictions(prices)        
         last_price_point_prediction = lc.data.iloc[-1]
 
-        if not pd.isna(last_price_point_prediction['endLongTrade']):
-            trader.portfolio.close_long(trader.symbol)
-        elif not pd.isna(last_price_point_prediction['startLongTrade']):
-            trader.portfolio.open_long(trader.symbol, self.settings.position_size, self.settings.trailing_stop)
+        #if not pd.isna(last_price_point_prediction['endLongTrade']):
+            #portfolio.close_long(symbol)
+        #elif not pd.isna(last_price_point_prediction['startLongTrade']):
+        if not pd.isna(last_price_point_prediction['startLongTrade']):
+            portfolio.open_long(symbol, self.settings.position_size, self.settings.trailing_stop)
 
     def get_lorentzian_predictions(self, prices):
-        """
-        Get the prediction from the Lorentzian analysis.
-        """        
-
         features = []
         if self.settings.use_RSI:
             features.append(LorentzianClassification.Feature("RSI", self.settings.RSI_param1, self.settings.RSI_param2))
@@ -179,7 +172,7 @@ class LorentzianStrategy(Strategy):
 
 class LorentzianOptimizer:
     @staticmethod
-    def optimize_setting(setting_name, value_range, current_settings, start_date=None, end_date=None, period=None, train_since=None):
+    def optimize_setting(symbol, initial_capital, feed, setting_name, value_range, current_settings, start_date=None, end_date=None, period=None, train_since=None):
         best_value = None
         best_return = float('-inf')
         
@@ -191,9 +184,9 @@ class LorentzianOptimizer:
             print(f"        Updated settings: {updated_settings}")
             settings = LorentzianSettings(**updated_settings)
             strategy = LorentzianStrategy(settings)
-            trader = Trader(strategy)
-            result_df = trader.backtest(start_date, end_date, period, train_since)
-            mean_return = result_df['portfolio_return'].mean()
+            trader = Trader(symbol, initial_capital, feed, strategy)
+            result = trader.backtest(start_date, end_date, period, train_since)
+            mean_return = result['returns']['portfolio_return'].mean()
             print(f"        Mean return: {mean_return}")
             
             if mean_return > best_return:
@@ -203,7 +196,7 @@ class LorentzianOptimizer:
         return best_value
 
     @staticmethod
-    def get_optimal_settings(optimizer_settings: LorentzianOptimizerSettings, default_settings: LorentzianSettings = None, start_date=None, end_date=None, period=None, train_since=None):
+    def get_optimal_settings(symbol, initial_capital, feed, optimizer_settings: LorentzianOptimizerSettings, default_settings: LorentzianSettings = None, start_date=None, end_date=None, period=None, train_since=None):
         if default_settings:
             optimal_settings_dict = default_settings.__dict__.copy()
         else:
@@ -214,7 +207,7 @@ class LorentzianOptimizer:
                 if len(value_range) == 1:
                     optimal_value = value_range[0]
                 else:
-                    optimal_value = LorentzianOptimizer.optimize_setting(setting_name, value_range, optimal_settings_dict, start_date, end_date, period, train_since)
+                    optimal_value = LorentzianOptimizer.optimize_setting(symbol, initial_capital, feed, setting_name, value_range, optimal_settings_dict, start_date, end_date, period, train_since)
                 print(f"Optimal value for {setting_name} is {optimal_value}")
                 optimal_settings_dict[setting_name] = optimal_value
         

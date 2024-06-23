@@ -11,29 +11,60 @@ class Portfolio:
         self.processed_trades = set()
         self.open_trail = {}
 
-    def open_long(self, symbol: str, percentage: float, trail: float) -> Order:
-        if percentage <= 0 or percentage > 1:
+    def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float) -> Order:
+        if cash_percentage <= 0 or cash_percentage > 1:
             raise ValueError("Percentage must be between 0 and 1")
-        
-        amount_to_invest = self.cash * percentage
-        
-        order = self.broker.create_order(symbol, OrderType.TRAILING_STOP, OrderSide.BUY, amount_to_invest, trail=trail)
+
+        print(f"Request to open long position on {symbol}")
+        if self.is_long(symbol):
+            print(f"    Already long on {symbol}")
+            return None
+
+        amount_to_invest = self.cash * cash_percentage    
+
+        print(f"    Opening long position for {symbol} with for {cash_percentage*100}% of the cash (£{amount_to_invest}) and {trail_percentage*100}% trail")
+        order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.BUY, cash_amount=amount_to_invest, trail=trail_percentage)
+    
         self.orders[order.id] = order
-        self.open_trail[symbol] = trail
-        return order
+        self.open_trail[symbol] = trail_percentage
+
+        self.update()
 
     def close_long(self, symbol: str):
-        if symbol in self.asset_holdings and self.asset_holdings[symbol] > 0:
-            order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.SELL, self.asset_holdings[symbol])
-            self.orders[order.id] = order
-            self.open_trail[symbol] = None
+        print(f"Request to close long position on {symbol}")
+        if not self.is_long(symbol):
+            print(f"    No long position on {symbol}")
+            return None
+        
+        # Cancel any pending trailing stop order for the symbol
+        pending_trailing_stop = next((order for order in self.orders.values() if 
+                                      order.symbol == symbol and 
+                                      order.order_side == OrderSide.SELL and 
+                                      order.order_type == OrderType.TRAILING_STOP and 
+                                      order.status == OrderStatus.PENDING), 
+                                     None)
+        if pending_trailing_stop:
+            self.broker.cancel_order(pending_trailing_stop.id)
+            del self.orders[pending_trailing_stop.id]
+            print(f"    Cancelled pending trailing stop order for {symbol}")
+
+        print(f"    Closing long position for {symbol}")            
+        order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.SELL, self.asset_holdings[symbol])
+        
+        self.orders[order.id] = order
+        self.open_trail[symbol] = None
+
+        self.update()
 
     def update(self):
         for order_id, order in self.orders.items():
+            updated_order = order
+
             if order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]:
                 updated_order = self.broker.fetch_order(order_id)
                 self.orders[order_id] = updated_order
-                self._process_order(updated_order)
+            
+            self._process_order(updated_order)
 
         # Check if we hold any asset and ensure there's an active trailing stop sell order
         for symbol, quantity in self.asset_holdings.items():
@@ -47,7 +78,7 @@ class Portfolio:
                 
                 if not active_sell_order:
                     # Create a new trailing stop sell order
-                    new_order = self.broker.create_order(symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity, trail=self.open_trail[symbol])
+                    new_order = self.broker.create_order(symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=quantity, trail=self.open_trail[symbol])
                     self.orders[new_order.id] = new_order
             else:
                 self.open_trail[symbol] = None   
@@ -69,14 +100,19 @@ class Portfolio:
             total_value += quantity * price
 
         return total_value
+
+    def is_long(self, symbol: str) -> bool:
+        return symbol in self.asset_holdings and self.asset_holdings[symbol] > 0
     
     def _process_order(self, order):
         for trade in order.trades:
             if trade.id not in self.processed_trades:
                 if order.order_side == OrderSide.BUY:
+                    print(f"    Bought {trade.quantity} {trade.symbol} at {trade.price}")
                     self.cash -= (trade.price * trade.quantity + trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) + trade.quantity
                 elif order.order_side == OrderSide.SELL:
+                    print(f"    Sold {trade.quantity} {trade.symbol} at {trade.price}")
                     self.cash += (trade.price * trade.quantity - trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) - trade.quantity
                 self.processed_trades.add(trade.id)

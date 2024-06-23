@@ -1,32 +1,51 @@
 import uuid
 from typing import Dict
-from ..broker import Broker, Order, OrderType, OrderSide, OrderStatus, Trade
+from robo_trader.broker import Broker, Order, OrderType, OrderSide, OrderStatus, Trade
 from datetime import datetime
 
 class BacktestBroker(Broker):
-    def __init__(self, transaction_cost_percentage: float = 0):
+    def __init__(self, transaction_cost: float = 0):
         self.orders: Dict[str, Order] = {}
         self.current_prices: Dict[str, float] = {}
         self.current_timestamp: datetime = None
-        self.transaction_cost_percentage = transaction_cost_percentage
+        self.transaction_cost = transaction_cost
 
-    def create_order(self, symbol: str, order_type: str, order_side: str, cash_amount: float, trail: float = None, limit: float = None, stop: float = None) -> Order:
+    def create_order(self, symbol: str, order_type: str, order_side: str, quantity: float = None, cash_amount: float = None, trail: float = None, limit: float = None, stop: float = None) -> Order:
+        if (quantity is None and cash_amount is None) or (quantity is not None and cash_amount is not None):
+            raise ValueError("Exactly one of quantity or cash_amount must be provided")
+        
+        if quantity is not None and quantity <= 0:
+            raise ValueError("Quantity must be positive")
+        
+        if cash_amount is not None and cash_amount <= 0:
+            raise ValueError("Cash amount must be positive")
+
         current_price = self.get_price(symbol)
         if current_price <= 0:
             raise ValueError(f"Invalid price for {symbol}: {current_price}")
 
         # Calculate the maximum quantity that can be bought with the given cash amount
-        transaction_cost = cash_amount * self.transaction_cost_percentage
-        available_cash = cash_amount - transaction_cost
-        quantity = available_cash / current_price
+        if not quantity:
+            transaction_cost = cash_amount * self.transaction_cost
+            available_cash = cash_amount - transaction_cost
+            quantity = available_cash / current_price
 
-        # Round down to ensure we don't exceed the cash amount
-        quantity = int(quantity)
+        if order_type == OrderType.TRAILING_STOP:
+            if order_side == OrderSide.BUY:
+                stop = current_price * (1 - trail)
+            elif order_side == OrderSide.SELL:
+                stop = current_price * (1 + trail)
 
         order_id = str(uuid.uuid4())
-        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, quantity=quantity, trail=trail, limit=limit, stop=stop)
+
+        print(f"    Creating {order_type} {order_side} order for {symbol} with quantity {quantity} at {current_price}")
+        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, status=OrderStatus.PENDING, quantity=quantity, trail=trail, limit=limit, stop=stop)
+
+        if order_type == OrderType.MARKET or order_type == OrderType.LIMIT:
+            order = self._execute_order(order)
+
         self.orders[order_id] = order
-        self._execute_order(order)  # Immediately execute the order
+
         return order
 
     def edit_order(self, order_id: str, stop: float):
@@ -54,17 +73,21 @@ class BacktestBroker(Broker):
                             self._execute_order(order)
                     elif order.order_type == OrderType.TRAILING_STOP:
                         if order.order_side == OrderSide.BUY:
-                            new_stop = current_price * (1 - order.trail / 100)
-                            if new_stop > order.stop:
-                                order.stop = new_stop
-                            elif current_price >= order.stop:
+                            if current_price >= order.stop:
                                 self._execute_order(order)
+                            else:   
+                                new_stop = current_price * (1 + order.trail)
+                                if new_stop < order.stop:
+                                    order.stop = new_stop
+                                    print(f"    Updated trailing stop to {order.stop}")
                         elif order.order_side == OrderSide.SELL:
-                            new_stop = current_price * (1 + order.trail / 100)
-                            if new_stop < order.stop:
-                                order.stop = new_stop
-                            elif current_price <= order.stop:
+                            if current_price <= order.stop:
                                 self._execute_order(order)
+                            else:
+                                new_stop = current_price * (1 - order.trail)
+                                if new_stop > order.stop:
+                                    order.stop = new_stop
+                                    print(f"    Updated trailing stop to {order.stop}")
 
     def set_price(self, symbol: str, price: float):
         self.current_prices[symbol] = price
@@ -74,7 +97,10 @@ class BacktestBroker(Broker):
 
     def _execute_order(self, order: Order):
         current_price = self.current_prices.get(order.symbol, 0)
-        transaction_costs = current_price * order.quantity * self.transaction_cost_percentage
+        transaction_costs = current_price * order.quantity * self.transaction_cost
+        
+        print(f"    Executing {order.order_type} {order.order_side} order for {order.symbol} with quantity {order.quantity} at {current_price}")
+
         trade = Trade(
             id=str(uuid.uuid4()),
             order_id=order.id,
@@ -88,4 +114,6 @@ class BacktestBroker(Broker):
         )
         order.trades.append(trade)
         order.status = OrderStatus.FILLED
+
+        return order
 

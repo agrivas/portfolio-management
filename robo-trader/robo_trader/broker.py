@@ -40,6 +40,7 @@ class Order:
     limit: float
     stop: float
     id: str
+    timestamp: datetime
     status: str = OrderStatus.PENDING
     trades: list[Trade] = None
 

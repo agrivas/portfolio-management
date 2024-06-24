@@ -1,17 +1,24 @@
-from .broker import Broker, Order, OrderType, OrderSide, OrderStatus
-from typing import Dict
+from .broker import Broker, Order, OrderType, OrderSide, OrderStatus, Trade
+from typing import Dict, List
 from datetime import datetime
+import json
+import uuid
 
 class Portfolio:
-    def __init__(self, broker: Broker, initial_cash: float):
+    def __init__(self, broker: Broker, initial_cash: float = None, load_from_file: str = None):
         self.broker = broker
-        self.cash = initial_cash
-        self.asset_holdings: Dict[str, float] = {}
-        self.orders: Dict[str, Order] = {}
-        self.processed_trades = set()
-        self.open_trail = {}
+        if load_from_file:
+            self._load_state(load_from_file)
+        else:
+            self.cash = initial_cash
+            self.asset_holdings: Dict[str, float] = {}
+            self.orders: Dict[str, Order] = {}
+            self.processed_trades = set()
+            self.open_trail = {}
+            self.valuation_history: List[Dict[str, float]] = []
+            self.uuid = str(uuid.uuid4())
 
-    def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float) -> Order:
+    def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float = None) -> Order:
         if cash_percentage <= 0 or cash_percentage > 1:
             raise ValueError("Percentage must be between 0 and 1")
 
@@ -28,7 +35,7 @@ class Portfolio:
         self.orders[order.id] = order
         self.open_trail[symbol] = trail_percentage
 
-        self.update()
+        self._update_orders()
 
     def close_long(self, symbol: str):
         print(f"Request to close long position on {symbol}")
@@ -54,34 +61,17 @@ class Portfolio:
         self.orders[order.id] = order
         self.open_trail[symbol] = None
 
-        self.update()
+        self._update_orders()
 
-    def update(self):
-        for order_id, order in self.orders.items():
-            updated_order = order
+    def update(self, time: datetime, prices: Dict[str, float] = None):
+        self._update_orders()
 
-            if order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]:
-                updated_order = self.broker.fetch_order(order_id)
-                self.orders[order_id] = updated_order
-            
-            self._process_order(updated_order)
+        # Update valuation history
+        current_valuation = self.get_valuation(time, prices)
+        self.valuation_history.append({"timestamp": time, "valuation": current_valuation})
 
-        # Check if we hold any asset and ensure there's an active trailing stop sell order
-        for symbol, quantity in self.asset_holdings.items():
-            if quantity > 0:
-                active_sell_order = next((order for order in self.orders.values() if 
-                                          order.symbol == symbol and 
-                                          order.order_side == OrderSide.SELL and 
-                                          order.order_type == OrderType.TRAILING_STOP and
-                                          order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]), 
-                                         None)
-                
-                if not active_sell_order:
-                    # Create a new trailing stop sell order
-                    new_order = self.broker.create_order(symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=quantity, trail=self.open_trail[symbol])
-                    self.orders[new_order.id] = new_order
-            else:
-                self.open_trail[symbol] = None   
+        # Persist the state of the portfolio on disk
+        self._persist_state()
 
     def get_valuation(self, time: datetime = None, prices: Dict[str, float] = None) -> float:
         if (time is None) != (prices is None):
@@ -104,6 +94,36 @@ class Portfolio:
     def is_long(self, symbol: str) -> bool:
         return symbol in self.asset_holdings and self.asset_holdings[symbol] > 0
     
+    def _update_orders(self):
+        for order_id, order in self.orders.items():
+            updated_order = order
+
+            if order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]:
+                updated_order = self.broker.fetch_order(order_id)
+                self.orders[order_id] = updated_order
+            
+            self._process_order(updated_order)
+
+        # Check if we hold any asset and ensure there's an active trailing stop sell order
+        for symbol, quantity in self.asset_holdings.items():
+            if quantity > 0:
+                if self.open_trail[symbol] is None:
+                    continue
+
+                active_sell_order = next((order for order in self.orders.values() if 
+                                          order.symbol == symbol and 
+                                          order.order_side == OrderSide.SELL and 
+                                          order.order_type == OrderType.TRAILING_STOP and
+                                          order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]), 
+                                         None)
+                
+                if not active_sell_order:
+                    # Create a new trailing stop sell order
+                    new_order = self.broker.create_order(symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=quantity, trail=self.open_trail[symbol])
+                    self.orders[new_order.id] = new_order
+            else:
+                self.open_trail[symbol] = None
+
     def _process_order(self, order):
         for trade in order.trades:
             if trade.id not in self.processed_trades:
@@ -116,3 +136,39 @@ class Portfolio:
                     self.cash += (trade.price * trade.quantity - trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) - trade.quantity
                 self.processed_trades.add(trade.id)
+
+    def _persist_state(self):
+        state = {
+            "cash": self.cash,
+            "asset_holdings": self.asset_holdings,
+            "orders": {
+                order_id: {
+                    **order.__dict__,
+                    "trades": [trade.__dict__ for trade in order.trades]
+                } for order_id, order in self.orders.items()
+            },
+            "processed_trades": list(self.processed_trades),
+            "open_trail": self.open_trail,
+            "valuation_history": self.valuation_history,
+            "uuid": self.uuid
+        }
+        filename = f"portfolio_{self.uuid}.json"
+        with open(filename, 'w') as f:
+            json.dump(state, f, default=str)  # Use default=str to handle datetime objects
+
+    def _load_state(self, filename: str):
+        with open(filename, 'r') as f:
+            state = json.load(f)
+        
+        self.cash = state["cash"]
+        self.asset_holdings = state["asset_holdings"]
+        self.orders = {
+            order_id: Order(
+                **{k: v for k, v in order_dict.items() if k != 'trades'},
+                trades=[Trade(**trade_dict) for trade_dict in order_dict['trades']]
+            ) for order_id, order_dict in state["orders"].items()
+        }
+        self.processed_trades = set(state["processed_trades"])
+        self.open_trail = state["open_trail"]
+        self.valuation_history = state["valuation_history"]
+        self.uuid = state["uuid"]

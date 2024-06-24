@@ -1,14 +1,15 @@
 import uuid
 from typing import Dict
 from robo_trader.broker import Broker, Order, OrderType, OrderSide, OrderStatus, Trade
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class BacktestBroker(Broker):
-    def __init__(self, transaction_cost: float = 0):
+    def __init__(self, transaction_cost: float = 0, trailing_stop_penalty_relief: float = 0.75):
         self.orders: Dict[str, Order] = {}
         self.current_prices: Dict[str, float] = {}
         self.current_timestamp: datetime = None
         self.transaction_cost = transaction_cost
+        self.trailing_stop_penalty_relief = trailing_stop_penalty_relief
 
     def create_order(self, symbol: str, order_type: str, order_side: str, quantity: float = None, cash_amount: float = None, trail: float = None, limit: float = None, stop: float = None) -> Order:
         if (quantity is None and cash_amount is None) or (quantity is not None and cash_amount is not None):
@@ -32,14 +33,15 @@ class BacktestBroker(Broker):
 
         if order_type == OrderType.TRAILING_STOP:
             if order_side == OrderSide.BUY:
-                stop = current_price * (1 - trail)
-            elif order_side == OrderSide.SELL:
                 stop = current_price * (1 + trail)
+            elif order_side == OrderSide.SELL:
+                stop = current_price * (1 - trail)
 
         order_id = str(uuid.uuid4())
+        timestamp = self.current_timestamp
 
-        print(f"    Creating {order_type} {order_side} order for {symbol} with quantity {quantity} at {current_price}")
-        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, status=OrderStatus.PENDING, quantity=quantity, trail=trail, limit=limit, stop=stop)
+        print(f"    Creating {order_type} {order_side} order for {symbol} at {current_price} with quantity {quantity}, trail {trail}, limit {limit}, stop {stop}")
+        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, status=OrderStatus.PENDING, quantity=quantity, trail=trail, limit=limit, stop=stop, timestamp=timestamp)
 
         if order_type == OrderType.MARKET or order_type == OrderType.LIMIT:
             order = self._execute_order(order)
@@ -72,17 +74,22 @@ class BacktestBroker(Broker):
                            (order.order_side == OrderSide.SELL and current_price <= order.stop):
                             self._execute_order(order)
                     elif order.order_type == OrderType.TRAILING_STOP:
-                        if order.order_side == OrderSide.BUY:
-                            if current_price >= order.stop:
-                                self._execute_order(order)
+                        # Simulating how trailing stop would have been triggered
+                        price_difference = current_price - order.stop
+                        trade_price = current_price - (price_difference * self.trailing_stop_penalty_relief)
+                        trade_timestamp = self.current_timestamp - timedelta(seconds=1)
+
+                        if order.order_side == OrderSide.BUY:                            
+                            if price_difference >= 0:
+                                self._execute_order(order, trade_timestamp, trade_price)
                             else:   
                                 new_stop = current_price * (1 + order.trail)
                                 if new_stop < order.stop:
                                     order.stop = new_stop
                                     print(f"    Updated trailing stop to {order.stop}")
                         elif order.order_side == OrderSide.SELL:
-                            if current_price <= order.stop:
-                                self._execute_order(order)
+                            if price_difference <= 0:
+                                self._execute_order(order, trade_timestamp, trade_price)
                             else:
                                 new_stop = current_price * (1 - order.trail)
                                 if new_stop > order.stop:
@@ -95,11 +102,17 @@ class BacktestBroker(Broker):
     def set_timestamp(self, timestamp: datetime):
         self.current_timestamp = timestamp
 
-    def _execute_order(self, order: Order):
-        current_price = self.current_prices.get(order.symbol, 0)
-        transaction_costs = current_price * order.quantity * self.transaction_cost
+    def _execute_order(self, order: Order, timestamp: datetime = None, price: float = None):
+        if timestamp is None:
+            timestamp = self.current_timestamp
+        if price is None:
+            price = self.current_prices.get(order.symbol, 0)
+
+        asset_cost = price * order.quantity
+        transaction_cost = asset_cost * self.transaction_cost
+        total_cost = asset_cost + transaction_cost
         
-        print(f"    Executing {order.order_type} {order.order_side} order for {order.symbol} with quantity {order.quantity} at {current_price}")
+        print(f"    Executing {order.order_type} {order.order_side} order for {order.symbol} at {price} with quantity {order.quantity}, total cost £{total_cost} and transaction cost £{transaction_cost}")
 
         trade = Trade(
             id=str(uuid.uuid4()),
@@ -107,10 +120,10 @@ class BacktestBroker(Broker):
             symbol=order.symbol,
             order_type=order.order_type,
             order_side=order.order_side,
-            price=current_price,
+            price=price,
             quantity=order.quantity,
-            timestamp=self.current_timestamp,
-            transaction_costs=transaction_costs
+            timestamp=timestamp,
+            transaction_costs=transaction_cost
         )
         order.trades.append(trade)
         order.status = OrderStatus.FILLED

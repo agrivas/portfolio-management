@@ -35,23 +35,23 @@ class Trader:
         signal.signal(signal.SIGINT, signal_handler)
 
         while True:
-            self.portfolio.update()  # Update portfolio in every iteration
-            
             current_data = self.feed.get_live_data(self.symbol)
-            if not current_data.empty and (self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp):
-                self.last_data_timestamp = current_data['date'].max()
-                self.strategy.evaluate_market(self)
+            if not current_data.empty:
+                if (self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp):
+                    self.last_data_timestamp = current_data['date'].max()
+                    self.strategy.evaluate_market(self, current_data, self.portfolio)
+                    self.portfolio.update(self.last_data_timestamp, {self.symbol: current_data['close'].iloc[-1]})
             
             time.sleep(60)  # Sleep for a minute
 
-    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None, train_since: datetime = None, transaction_cost: float = None):
+    def backtest(self, start_date: datetime = None, end_date: datetime = None, period: int = None, train_since: datetime = None, transaction_cost: float = None, trailing_stop_penalty_relief: float = None):
         """
         Replay historical data from the price provider as if we received one point at a time.
         Track the price of the asset on the first date and the valuation of the portfolio.
         Record them again at the end of the period, calculate the returns for both and return them in a unified dataframe.
         Additionally, calculate discrete performance every 'period' prices if specified, including a row for the whole period.
         """
-        backtest_broker = BacktestBroker(transaction_cost if transaction_cost is not None else 0)
+        backtest_broker = BacktestBroker(transaction_cost if transaction_cost is not None else 0, trailing_stop_penalty_relief if trailing_stop_penalty_relief is not None else 0.75)
         backtest_portfolio = Portfolio(backtest_broker, self.initial_cash)
 
         if train_since and start_date and train_since >= start_date:
@@ -99,12 +99,12 @@ class Trader:
             backtest_broker.set_timestamp(prices.index[index])
             backtest_broker.set_price(self.symbol, price_point['close'])
             backtest_broker.update()
-            
-            # Update portfolio before strategy evaluation
-            backtest_portfolio.update()          
-
+                        
             # Call evaluate_market on the strategy with prices up to the current index and the trader
             self.strategy.evaluate_market(self.symbol, prices.iloc[:index+1], backtest_portfolio)
+
+            # Update portfolio after strategy evaluation
+            backtest_portfolio.update(prices.index[index], {self.symbol: price_point['close']})
 
             # Check if a long position was opened or closed
             current_holdings = backtest_portfolio.asset_holdings.get(self.symbol, 0)

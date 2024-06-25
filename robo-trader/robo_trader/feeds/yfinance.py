@@ -30,9 +30,10 @@ class YFinanceFeed(Feed):
         return self._format_dataframe(df)
 
     def _format_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Rename index to match Ohlcv.DATE and make timezone aware on UTC
+        # Ensure the index is a DatetimeIndex and convert to UTC
         if not isinstance(df.index, pd.DatetimeIndex):
-            df.index = df.index.tz_convert('UTC')
+            df.index = pd.to_datetime(df.index)
+        df.index = df.index.tz_localize('UTC') if df.index.tz is None else df.index.tz_convert('UTC')
         df.index.names = [Ohlcv.DATE]
 
         # Rename columns to match Ohlcv enum types

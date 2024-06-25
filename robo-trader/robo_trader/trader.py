@@ -52,7 +52,7 @@ class Trader:
         Additionally, calculate discrete performance every 'period' prices if specified, including a row for the whole period.
         """
         backtest_broker = BacktestBroker(transaction_cost if transaction_cost is not None else 0, trailing_stop_penalty_relief if trailing_stop_penalty_relief is not None else 0.75)
-        backtest_portfolio = Portfolio(backtest_broker, self.initial_cash)
+        backtest_portfolio = Portfolio(backtest_broker, self.initial_cash, autosave=False)
 
         if train_since and start_date and train_since >= start_date:
             raise ValueError("train_since must be before start_date")
@@ -68,7 +68,7 @@ class Trader:
             print("No historical data available for backtesting.")
             return
 
-        start_index = prices.index.get_loc(start_date) if start_date else 0
+        start_index = prices.index.get_loc(prices.index.asof(start_date)) if start_date else 0
         initial_price = prices.iloc[start_index]['open']
         initial_date = prices.index[start_index]
         initial_portfolio_valuation = backtest_portfolio.get_valuation(time=initial_date, prices={self.symbol: initial_price})
@@ -128,6 +128,8 @@ class Trader:
 
                 last_discrete_price = current_price
                 last_discrete_portfolio_valuation = current_portfolio_valuation
+
+        backtest_portfolio.save()
 
         # Add row for the whole period
         final_price = prices.iloc[-1]['close']

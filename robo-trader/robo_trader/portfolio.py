@@ -1,22 +1,20 @@
 from .broker import Broker, Order, OrderType, OrderSide, OrderStatus, Trade
 from typing import Dict, List
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import uuid
 
 class Portfolio:
-    def __init__(self, broker: Broker, initial_cash: float = None, load_from_file: str = None):
+    def __init__(self, broker: Broker, initial_cash: float = None, autosave: bool = True):
         self.broker = broker
-        if load_from_file:
-            self._load_state(load_from_file)
-        else:
-            self.cash = initial_cash
-            self.asset_holdings: Dict[str, float] = {}
-            self.orders: Dict[str, Order] = {}
-            self.processed_trades = set()
-            self.open_trail = {}
-            self.valuation_history: List[Dict[str, float]] = []
-            self.uuid = str(uuid.uuid4())
+        self.autosave = autosave        
+        self.cash = initial_cash
+        self.asset_holdings: Dict[str, float] = {}
+        self.orders: Dict[str, Order] = {}
+        self.processed_trades = set()
+        self.open_trail = {}
+        self.valuation_history: List[Dict[str, float]] = []
+        self.uuid = str(uuid.uuid4())
 
     def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float = None) -> Order:
         if cash_percentage <= 0 or cash_percentage > 1:
@@ -66,12 +64,18 @@ class Portfolio:
     def update(self, time: datetime, prices: Dict[str, float] = None):
         self._update_orders()
 
-        # Update valuation history
+        # Update valuation history on every update
         current_valuation = self.get_valuation(time, prices)
-        self.valuation_history.append({"timestamp": time, "valuation": current_valuation})
+        self.valuation_history.append({
+            "timestamp": time,
+            "valuation": current_valuation,
+            "prices": prices,
+            "asset_holdings": self.asset_holdings.copy()
+        })
 
-        # Persist the state of the portfolio on disk
-        self._persist_state()
+        # Autosave on every update if enabled
+        if self.autosave:
+            self.save()
 
     def get_valuation(self, time: datetime = None, prices: Dict[str, float] = None) -> float:
         if (time is None) != (prices is None):
@@ -128,16 +132,16 @@ class Portfolio:
         for trade in order.trades:
             if trade.id not in self.processed_trades:
                 if order.order_side == OrderSide.BUY:
-                    print(f"\033[92m    Bought {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
+                    print(f"\033[92m        Bought {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
                     self.cash -= (trade.price * trade.quantity + trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) + trade.quantity
                 elif order.order_side == OrderSide.SELL:
-                    print(f"\033[91m    Sold {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
+                    print(f"\033[91m        Sold {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
                     self.cash += (trade.price * trade.quantity - trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) - trade.quantity
                 self.processed_trades.add(trade.id)
 
-    def _persist_state(self):
+    def save(self):
         state = {
             "cash": self.cash,
             "asset_holdings": self.asset_holdings,
@@ -150,25 +154,31 @@ class Portfolio:
             "processed_trades": list(self.processed_trades),
             "open_trail": self.open_trail,
             "valuation_history": self.valuation_history,
-            "uuid": self.uuid
+            "uuid": self.uuid,
+            "autosave": self.autosave
         }
         filename = f"portfolio_{self.uuid}.json"
         with open(filename, 'w') as f:
             json.dump(state, f, default=str)  # Use default=str to handle datetime objects
 
-    def _load_state(self, filename: str):
+    @staticmethod
+    def from_file(broker: Broker, filename: str) -> 'Portfolio':
         with open(filename, 'r') as f:
             state = json.load(f)
         
-        self.cash = state["cash"]
-        self.asset_holdings = state["asset_holdings"]
-        self.orders = {
+        portfolio = Portfolio(broker)
+        portfolio.cash = state["cash"]
+        portfolio.asset_holdings = state["asset_holdings"]
+        portfolio.orders = {
             order_id: Order(
                 **{k: v for k, v in order_dict.items() if k != 'trades'},
                 trades=[Trade(**trade_dict) for trade_dict in order_dict['trades']]
             ) for order_id, order_dict in state["orders"].items()
         }
-        self.processed_trades = set(state["processed_trades"])
-        self.open_trail = state["open_trail"]
-        self.valuation_history = state["valuation_history"]
-        self.uuid = state["uuid"]
+        portfolio.processed_trades = set(state["processed_trades"])
+        portfolio.open_trail = state["open_trail"]
+        portfolio.valuation_history = state["valuation_history"]
+        portfolio.uuid = state["uuid"]
+        portfolio.autosave = state.get("autosave", True)
+        return portfolio
+

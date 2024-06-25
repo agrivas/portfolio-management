@@ -6,7 +6,7 @@ import numpy as np
 from .feed import Feed
 from .strategy import Strategy
 from .portfolio import Portfolio
-from .broker import Broker
+from .broker import Broker, OrderStatus, OrderSide
 from .brokers.backtest_broker import BacktestBroker
 
 class Trader:
@@ -81,12 +81,6 @@ class Trader:
         prices['open_long'] = False
         prices['close_long'] = False
 
-        # For tracking wins and losses
-        wins = 0
-        total_trades = 0
-        portfolio_returns = []
-        asset_returns = []
-
         # Iterate from start_index to the end of the frame
         for index in range(start_index, len(prices)):
             price_point = prices.iloc[index]
@@ -112,23 +106,9 @@ class Trader:
                 prices.at[prices.index[index], 'open_long'] = True
             elif current_holdings < prev_holdings:
                 prices.at[prices.index[index], 'close_long'] = True
-                total_trades += 1
-                current_portfolio_value = backtest_portfolio.get_valuation(time=prices.index[index], prices={self.symbol: price_point['close']})
-                if current_portfolio_value > prev_portfolio_value:
-                    wins += 1
-
-            # Calculate returns
-            if index > start_index:
-                portfolio_return = (backtest_portfolio.get_valuation(time=prices.index[index], prices={self.symbol: price_point['close']}) - 
-                                    backtest_portfolio.get_valuation(time=prices.index[index-1], prices={self.symbol: prices.iloc[index-1]['close']})) / \
-                                   backtest_portfolio.get_valuation(time=prices.index[index-1], prices={self.symbol: prices.iloc[index-1]['close']})
-                asset_return = (price_point['close'] - prices.iloc[index-1]['close']) / prices.iloc[index-1]['close']
-                
-                portfolio_returns.append(portfolio_return)
-                asset_returns.append(asset_return)
 
             # Check if we should record the data
-            if (period is not None and (index - start_index) % period == 0):
+            if (period is not None and (index - start_index) % period == 0 and (index - start_index) / period > 0):
                 current_price = price_point['close']
                 current_date = prices.index[index]
                 current_portfolio_valuation = backtest_portfolio.get_valuation(time=current_date, prices={self.symbol: current_price})
@@ -169,21 +149,37 @@ class Trader:
 
         returns = pd.DataFrame(returns_data)
 
-        # Calculate performance stats
-        win_rate = wins / total_trades if total_trades > 0 else 0
-        portfolio_returns = np.array(portfolio_returns)
-        asset_returns = np.array(asset_returns)
-        excess_returns = portfolio_returns - asset_returns
-        sharpe_ratio = np.mean(excess_returns) / np.std(excess_returns) if np.std(excess_returns) != 0 else 0
-        downside_returns = np.minimum(excess_returns - 0, 0)
-        sortino_ratio = np.mean(excess_returns) / np.std(downside_returns) if np.std(downside_returns) != 0 else 0
+        # Calculate win_rate based on trades
+        winning_trades = 0
+        total_trades = 0
+        open_position = None
+        for order in backtest_portfolio.orders.values():
+            if order.status == OrderStatus.FILLED and order.trades:
+                if order.order_side == OrderSide.BUY:
+                    # Open a new position
+                    open_position = {
+                        'buy_cash': sum((trade.price * trade.quantity + trade.transaction_costs) for trade in order.trades),
+                        'quantity': sum(trade.quantity for trade in order.trades),
+                        'symbol': order.symbol
+                    }
+                elif order.order_side == OrderSide.SELL and open_position and order.symbol == open_position['symbol']:
+                    # Close the position
+                    total_trades += 1
+                    sell_cash = sum((trade.price * trade.quantity - trade.transaction_costs) for trade in order.trades)
+                    
+                    # Compare sell cash to buy cash
+                    if sell_cash > open_position['buy_cash']:
+                        winning_trades += 1
+                    
+                    # Reset open position
+                    open_position = None
 
+        win_rate = winning_trades / total_trades if total_trades > 0 else 0
+        
         performance_stats = {
             'initial_value': initial_portfolio_valuation,
             'final_value': final_portfolio_valuation,
             'win_rate': win_rate,
-            'sharpe_ratio': sharpe_ratio,
-            'sortino_ratio': sortino_ratio,
             'history': prices,
             'returns': returns,
             'orders': backtest_portfolio.orders

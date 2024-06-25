@@ -128,11 +128,11 @@ class Portfolio:
         for trade in order.trades:
             if trade.id not in self.processed_trades:
                 if order.order_side == OrderSide.BUY:
-                    print(f"    Bought {trade.quantity} {trade.symbol} at {trade.price}")
+                    print(f"\033[92m    Bought {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
                     self.cash -= (trade.price * trade.quantity + trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) + trade.quantity
                 elif order.order_side == OrderSide.SELL:
-                    print(f"    Sold {trade.quantity} {trade.symbol} at {trade.price}")
+                    print(f"\033[91m    Sold {trade.quantity} {trade.symbol} at {trade.price} on {trade.timestamp.strftime('%d/%m/%Y %H:%M')}\033[0m")
                     self.cash += (trade.price * trade.quantity - trade.transaction_costs)
                     self.asset_holdings[trade.symbol] = self.asset_holdings.get(trade.symbol, 0) - trade.quantity
                 self.processed_trades.add(trade.id)

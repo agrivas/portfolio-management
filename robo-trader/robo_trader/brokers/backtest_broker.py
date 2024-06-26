@@ -64,7 +64,10 @@ class BacktestBroker(Broker):
     def get_price(self, symbol: str) -> float:
         return self.current_prices.get(symbol, 0)
 
-    def update(self):
+    def update(self, timestamp: datetime, prices: Dict[str, float]):
+        self.current_timestamp = timestamp
+        self.current_prices = prices
+
         for order_id, order in self.orders.items():
             if order.status == OrderStatus.PENDING:
                 current_price = self.current_prices.get(order.symbol)
@@ -95,12 +98,6 @@ class BacktestBroker(Broker):
                                 if new_stop > order.stop:
                                     order.stop = new_stop
                                     print(f"    Updated trailing stop to {order.stop}")
-
-    def set_price(self, symbol: str, price: float):
-        self.current_prices[symbol] = price
-
-    def set_timestamp(self, timestamp: datetime):
-        self.current_timestamp = timestamp
 
     def _execute_order(self, order: Order, timestamp: datetime = None, price: float = None):
         if timestamp is None:

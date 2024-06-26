@@ -5,8 +5,9 @@ from datetime import datetime
 class OrderType:
     MARKET = 'MARKET'
     LIMIT = 'LIMIT'
-    STOP = 'STOP'
+    STOP_LOSS = 'STOP_LOSS'
     TRAILING_STOP = 'TRAILING_STOP'
+    TAKE_PROFIT = 'TAKE_PROFIT'
 
 class OrderSide:
     BUY = 'BUY'
@@ -50,7 +51,7 @@ class Order:
 
 class Broker(ABC):
     @abstractmethod
-    def create_order(self, symbol: str, order_type: str, order_side: str, cash_amount: float, trail: float = None, limit: float = None, stop: float = None) -> Order:
+    def create_order(self, symbol: str, order_type: str, order_side: str, cash_amount: float, trail: float = None, limit: float = None, stop: float = None, take_profit: float = None) -> Order:
         pass
 
     @abstractmethod

@@ -6,7 +6,6 @@ import uuid
 from enum import Enum
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
 class PositionSide(str, Enum):
     LONG = "long"
@@ -16,11 +15,13 @@ class PositionSide(str, Enum):
         return self.value
 
 class Position:
-    def __init__(self, symbol: str, side: PositionSide, amount_invested: float, trail_percentage: float = None):
+    def __init__(self, symbol: str, side: PositionSide, amount_invested: float, trail_percentage: float = None, take_profit_percentage: float = None, stop_percentage: float = None):
         self.symbol = symbol
         self.side = side
         self.amount_invested = amount_invested
         self.trail_percentage = trail_percentage
+        self.take_profit_percentage = take_profit_percentage
+        self.stop_percentage = stop_percentage
         self.is_open = True
         self.open_price = None
         self.close_price = None
@@ -52,9 +53,15 @@ class Portfolio:
         return f"Portfolio(cash={self.cash}, assets={self.asset_holdings})"
 
     # Public methods
-    def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float = None) -> Order:
+    def open_long(self, symbol: str, cash_percentage: float, trail_percentage: float = None, take_profit_percentage: float = None, stop_percentage: float = None) -> Order:
         if cash_percentage <= 0 or cash_percentage > 1:
             raise ValueError("Percentage must be between 0 and 1")
+
+        if trail_percentage is not None and (take_profit_percentage is not None or stop_percentage is not None):
+            raise ValueError("Trail percentage cannot be used with take profit or stop loss")
+
+        if (take_profit_percentage is None) != (stop_percentage is None):
+            raise ValueError("Take profit and stop loss must be used together")
 
         print(f"Request to open long position on {symbol}")
         if self.is_long(symbol):
@@ -63,13 +70,13 @@ class Portfolio:
 
         amount_to_invest = self.cash * cash_percentage    
 
-        print(f"    Opening long position for {symbol} with for {cash_percentage*100}% of the cash (£{amount_to_invest}) and {trail_percentage*100}% trail")
-        order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.BUY, cash_amount=amount_to_invest, trail=trail_percentage)
+        print(f"    Opening long position for {symbol} with for {cash_percentage*100}% of the cash (£{amount_to_invest})")
+        order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.BUY, cash_amount=amount_to_invest)
     
         self.orders[order.id] = order
         
         # Create a new position
-        position = Position(symbol, PositionSide.LONG, amount_to_invest, trail_percentage)
+        position = Position(symbol, PositionSide.LONG, amount_to_invest, trail_percentage, take_profit_percentage, stop_percentage)
         position.order_ids.append(order.id)
         self.positions.append(position)
 
@@ -87,17 +94,16 @@ class Portfolio:
             print(f"    No open long position found for {symbol}")
             return None
 
-        # Cancel any pending trailing stop order for the symbol
-        pending_trailing_stop = next((order for order in self.orders.values() if 
-                                      order.symbol == symbol and 
-                                      order.order_side == OrderSide.SELL and 
-                                      order.order_type == OrderType.TRAILING_STOP and 
-                                      order.status == OrderStatus.PENDING), 
-                                     None)
-        if pending_trailing_stop:
-            self.broker.cancel_order(pending_trailing_stop.id)
-            del self.orders[pending_trailing_stop.id]
-            print(f"    Cancelled pending trailing stop order for {symbol}")
+        # Cancel any pending trailing stop, take profit, or stop loss order for the symbol
+        pending_sell_orders = [order for order in self.orders.values() if 
+                               order.symbol == symbol and 
+                               order.order_side == OrderSide.SELL and 
+                               (order.order_type in [OrderType.TRAILING_STOP, OrderType.TAKE_PROFIT, OrderType.STOP_LOSS]) and 
+                               order.status == OrderStatus.PENDING]
+        for pending_sell_order in pending_sell_orders:
+            self.broker.cancel_order(pending_sell_order.id)
+            del self.orders[pending_sell_order.id]
+            print(f"    Cancelled pending sell order for {symbol}")
 
         print(f"    Closing long position for {symbol}")            
         order = self.broker.create_order(symbol, OrderType.MARKET, OrderSide.SELL, self.asset_holdings[symbol])
@@ -303,22 +309,49 @@ class Portfolio:
             
             self._process_order(updated_order)
 
-        # Check if we hold any asset and ensure there's an active trailing stop sell order
+        # Check if we hold any asset and ensure there's an active trailing stop, take profit, or stop loss sell order
         for position in self.positions:
-            if position.is_open and position.side == PositionSide.LONG:
-                if position.trail_percentage is None:
-                    continue
-
-                active_sell_order = next((order for order in self.orders.values() if 
-                                          order.symbol == position.symbol and 
-                                          order.order_side == OrderSide.SELL and 
-                                          order.order_type == OrderType.TRAILING_STOP and
-                                          order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]), 
-                                         None)
+            if position.is_open and position.side == PositionSide.LONG and position.quantity is not None:
+                current_price = self.broker.get_price(position.symbol)
+                active_sell_orders = [order for order in self.orders.values() if 
+                                      order.symbol == position.symbol and 
+                                      order.order_side == OrderSide.SELL and 
+                                      order.order_type in [OrderType.TRAILING_STOP, OrderType.TAKE_PROFIT, OrderType.STOP_LOSS] and
+                                      order.status not in [OrderStatus.FILLED, OrderStatus.CANCELLED]]
                 
-                if not active_sell_order and position.quantity is not None:
-                    # Create a new trailing stop sell order
-                    new_order = self.broker.create_order(position.symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=position.quantity, trail=position.trail_percentage)
+                if not active_sell_orders:
+                    if position.trail_percentage is not None:
+                        new_order = self.broker.create_order(position.symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=position.quantity, trail=position.trail_percentage)
+                    elif position.take_profit_percentage is not None and position.stop_percentage is not None:
+                        take_profit_order = self.broker.create_order(position.symbol, OrderType.TAKE_PROFIT, OrderSide.SELL, quantity=position.quantity, take_profit=position.take_profit_percentage)
+                        stop_loss_order = self.broker.create_order(position.symbol, OrderType.STOP_LOSS, OrderSide.SELL, quantity=position.quantity, stop=position.stop_percentage)
+                        self.orders[take_profit_order.id] = take_profit_order
+                        self.orders[stop_loss_order.id] = stop_loss_order
+                        position.order_ids.extend([take_profit_order.id, stop_loss_order.id])
+                    else:
+                        continue  # No trailing stop, take profit, or stop loss specified
+                else:
+                    # If we have a trailing stop and the price has increased, update the trailing stop
+                    trailing_stop_order = next((order for order in active_sell_orders if order.order_type == OrderType.TRAILING_STOP), None)
+                    if trailing_stop_order and current_price > position.open_price:
+                        # Calculate the current profit percentage
+                        profit_percentage = (current_price - position.open_price) / position.open_price
+                        
+                        # Reduce the trail percentage based on the profit
+                        # This is a simple linear reduction, you might want to adjust this formula
+                        new_trail_percentage = max(position.trail_percentage * (1 - 10 * profit_percentage), 0.005)  # Minimum 0.5% trail
+                        
+                        # Calculate the new stop price that locks in most of the current profit
+                        new_stop_price = current_price * (1 - new_trail_percentage)
+                        
+                        if new_stop_price > trailing_stop_order.stop:
+                            # Cancel the current trailing stop order
+                            self.broker.cancel_order(trailing_stop_order.id)
+                            # Create a new trailing stop order with the updated trail percentage
+                            new_order = self.broker.create_order(position.symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=position.quantity, trail=new_trail_percentage)
+                            print(f"Updated trailing stop for {position.symbol} to {new_stop_price:.2f} (trail: {new_trail_percentage:.2%})")
+                
+                if 'new_order' in locals():
                     self.orders[new_order.id] = new_order
                     position.order_ids.append(new_order.id)
 
@@ -343,5 +376,16 @@ class Portfolio:
                     position = next((pos for pos in self.positions if pos.symbol == trade.symbol and pos.is_open), None)
                     if position:
                         position.close(trade.price)
+                        
+                        # Cancel the other order of the take profit / stop loss pair
+                        if order.order_type in [OrderType.TAKE_PROFIT, OrderType.STOP_LOSS]:
+                            other_order_type = OrderType.STOP_LOSS if order.order_type == OrderType.TAKE_PROFIT else OrderType.TAKE_PROFIT
+                            other_order = next((o for o in self.orders.values() if 
+                                                o.symbol == trade.symbol and 
+                                                o.order_type == other_order_type and 
+                                                o.status == OrderStatus.PENDING), None)
+                            if other_order:
+                                self.broker.cancel_order(other_order.id)
+                                print(f"\033[93m        Cancelled {other_order_type} order for {trade.symbol}\033[0m")
                 
                 self.processed_trades.add(trade.id)

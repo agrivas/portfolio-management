@@ -11,7 +11,7 @@ class BacktestBroker(Broker):
         self.transaction_cost = transaction_cost
         self.trailing_stop_penalty_relief = trailing_stop_penalty_relief
 
-    def create_order(self, symbol: str, order_type: str, order_side: str, quantity: float = None, cash_amount: float = None, trail: float = None, limit: float = None, stop: float = None) -> Order:
+    def create_order(self, symbol: str, order_type: str, order_side: str, quantity: float = None, cash_amount: float = None, trail: float = None, limit: float = None, stop: float = None, take_profit: float = None) -> Order:
         if (quantity is None and cash_amount is None) or (quantity is not None and cash_amount is not None):
             raise ValueError("Exactly one of quantity or cash_amount must be provided")
         
@@ -20,6 +20,9 @@ class BacktestBroker(Broker):
         
         if cash_amount is not None and cash_amount <= 0:
             raise ValueError("Cash amount must be positive")
+
+        if trail is not None and take_profit is not None:
+            raise ValueError("Only one of trail or take_profit can be set")
 
         current_price = self.get_price(symbol)
         if current_price <= 0:
@@ -31,17 +34,37 @@ class BacktestBroker(Broker):
             available_cash = cash_amount - transaction_cost
             quantity = available_cash / current_price
 
+        stop_amount = None
         if order_type == OrderType.TRAILING_STOP:
             if order_side == OrderSide.BUY:
-                stop = current_price * (1 + trail)
+                stop_amount = current_price * (1 + trail)
             elif order_side == OrderSide.SELL:
-                stop = current_price * (1 - trail)
+                stop_amount = current_price * (1 - trail)
+        elif order_type == OrderType.TAKE_PROFIT:
+            if order_side == OrderSide.BUY:
+                stop_amount = current_price * (1 - take_profit)
+            elif order_side == OrderSide.SELL:
+                stop_amount = current_price * (1 + take_profit)
+        elif order_type == OrderType.STOP_LOSS:
+            if order_side == OrderSide.BUY:
+                stop_amount = current_price * (1 + stop)
+            elif order_side == OrderSide.SELL:
+                stop_amount = current_price * (1 - stop)
+
+        trail_amount = trail * current_price if trail is not None else None
+
+        limit_amount = None
+        if order_type == OrderType.LIMIT:
+            if order_side == OrderSide.BUY:
+                limit_amount = current_price * (1 - limit)
+            elif order_side == OrderSide.SELL:
+                limit_amount = current_price * (1 + limit)
 
         order_id = str(uuid.uuid4())
         timestamp = self.current_timestamp
 
-        print(f"    Creating {order_type} {order_side} order for {symbol} at {current_price} with quantity {quantity}, trail {trail}, limit {limit}, stop {stop}")
-        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, status=OrderStatus.PENDING, quantity=quantity, trail=trail, limit=limit, stop=stop, timestamp=timestamp)
+        print(f"    Creating {order_type} {order_side} order for {symbol} at {current_price} with quantity {quantity}, trail {trail}, limit {limit}, stop {stop}, take_profit {take_profit}")
+        order = Order(id=order_id, symbol=symbol, order_type=order_type, order_side=order_side, status=OrderStatus.PENDING, quantity=quantity, trail=trail_amount, limit=limit_amount, stop=stop_amount, timestamp=timestamp)
 
         if order_type == OrderType.MARKET or order_type == OrderType.LIMIT:
             order = self._execute_order(order)
@@ -72,7 +95,7 @@ class BacktestBroker(Broker):
             if order.status == OrderStatus.PENDING:
                 current_price = self.current_prices.get(order.symbol)
                 if current_price is not None:
-                    if order.order_type == OrderType.STOP:
+                    if order.order_type == OrderType.STOP_LOSS:
                         if (order.order_side == OrderSide.BUY and current_price >= order.stop) or \
                            (order.order_side == OrderSide.SELL and current_price <= order.stop):
                             self._execute_order(order)
@@ -86,7 +109,7 @@ class BacktestBroker(Broker):
                             if price_difference >= 0:
                                 self._execute_order(order, trade_timestamp, trade_price)
                             else:   
-                                new_stop = current_price * (1 + order.trail)
+                                new_stop = current_price + order.trail
                                 if new_stop < order.stop:
                                     order.stop = new_stop
                                     print(f"    Updated trailing stop to {order.stop}")
@@ -94,10 +117,17 @@ class BacktestBroker(Broker):
                             if price_difference <= 0:
                                 self._execute_order(order, trade_timestamp, trade_price)
                             else:
-                                new_stop = current_price * (1 - order.trail)
+                                new_stop = current_price - order.trail
                                 if new_stop > order.stop:
                                     order.stop = new_stop
                                     print(f"    Updated trailing stop to {order.stop}")
+                    elif order.order_type == OrderType.TAKE_PROFIT:
+                        if order.order_side == OrderSide.BUY:
+                            if current_price <= order.stop:
+                                self._execute_order(order)
+                        elif order.order_side == OrderSide.SELL:
+                            if current_price >= order.stop:
+                                self._execute_order(order)
 
     def _execute_order(self, order: Order, timestamp: datetime = None, price: float = None):
         if timestamp is None:
@@ -126,4 +156,5 @@ class BacktestBroker(Broker):
         order.status = OrderStatus.FILLED
 
         return order
+
 

@@ -11,6 +11,7 @@ class SimpleReversalSettings:
     rsi_overbought: int = 60
     position_size: float = 0.25
     trailing_stop: float = 0.02
+    take_profit: float = None
 
 class SimpleReversalStrategy(Strategy):
     def __init__(self, settings: SimpleReversalSettings):
@@ -31,4 +32,4 @@ class SimpleReversalStrategy(Strategy):
         last_rsi = data['RSI'].iloc[-1]
 
         if last_price > last_sma and last_rsi < self.settings.rsi_overbought:
-            portfolio.open_long(symbol, self.settings.position_size, self.settings.trailing_stop)
+            portfolio.open_long(symbol, self.settings.position_size, self.settings.trailing_stop, self.settings.take_profit)

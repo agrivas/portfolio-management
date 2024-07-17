@@ -57,11 +57,11 @@ class Portfolio:
         if cash_percentage <= 0 or cash_percentage > 1:
             raise ValueError("Percentage must be between 0 and 1")
 
-        if trail_percentage is not None and (take_profit_percentage is not None or stop_percentage is not None):
-            raise ValueError("Trail percentage cannot be used with take profit or stop loss")
+        if trail_percentage is not None and stop_percentage is not None:
+            raise ValueError("Trail percentage cannot be used with stop loss")
 
-        if (take_profit_percentage is None) != (stop_percentage is None):
-            raise ValueError("Take profit and stop loss must be used together")
+        if stop_percentage is not None and take_profit_percentage is None:
+            raise ValueError("Stop percentage always requires a take profit percentage")
 
         print(f"Request to open long position on {symbol}")
         if self.is_long(symbol):
@@ -338,18 +338,19 @@ class Portfolio:
                         profit_percentage = (current_price - position.open_price) / position.open_price
                         
                         # Reduce the trail percentage based on the profit
-                        # This is a simple linear reduction, you might want to adjust this formula
-                        new_trail_percentage = max(position.trail_percentage * (1 - 10 * profit_percentage), 0.005)  # Minimum 0.5% trail
+                        if profit_percentage > 0:
+                            take_profit_coverage = profit_percentage / position.take_profit_percentage
+                            new_trail_percentage = max(position.trail_percentage * (1 - min(take_profit_coverage, 1)), 0.001)  # Minimum 0.1% trail
                         
-                        # Calculate the new stop price that locks in most of the current profit
-                        new_stop_price = current_price * (1 - new_trail_percentage)
-                        
-                        if new_stop_price > trailing_stop_order.stop:
-                            # Cancel the current trailing stop order
-                            self.broker.cancel_order(trailing_stop_order.id)
-                            # Create a new trailing stop order with the updated trail percentage
-                            new_order = self.broker.create_order(position.symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=position.quantity, trail=new_trail_percentage)
-                            print(f"Updated trailing stop for {position.symbol} to {new_stop_price:.2f} (trail: {new_trail_percentage:.2%})")
+                            # Calculate the new stop price that locks in most of the current profit
+                            new_stop_price = current_price * (1 - new_trail_percentage)
+                            
+                            if new_stop_price > trailing_stop_order.stop:
+                                # Cancel the current trailing stop order
+                                self.broker.cancel_order(trailing_stop_order.id)
+                                # Create a new trailing stop order with the updated trail percentage
+                                new_order = self.broker.create_order(position.symbol, OrderType.TRAILING_STOP, OrderSide.SELL, quantity=position.quantity, trail=new_trail_percentage)
+                                print(f"Updated trailing stop for {position.symbol} to {new_stop_price:.2f} (trail: {new_trail_percentage:.2%})")
                 
                 if 'new_order' in locals():
                     self.orders[new_order.id] = new_order

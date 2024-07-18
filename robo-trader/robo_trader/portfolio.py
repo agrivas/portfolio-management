@@ -231,12 +231,24 @@ class Portfolio:
         df['portfolio_return'] = (df['portfolio_value'] - initial_portfolio_valuation) / initial_portfolio_valuation
         df['buy_and_hold_return'] = (df['buy_and_hold_value'] - initial_portfolio_valuation) / initial_portfolio_valuation
 
+        # Calculate max drawdown for portfolio
+        df['portfolio_cummax'] = df['portfolio_value'].cummax()
+        df['portfolio_drawdown'] = (df['portfolio_value'] - df['portfolio_cummax']) / df['portfolio_cummax']
+        portfolio_max_drawdown = df['portfolio_drawdown'].min()
+
+        # Calculate max drawdown for asset
+        df['asset_cummax'] = df['asset_price'].cummax()
+        df['asset_drawdown'] = (df['asset_price'] - df['asset_cummax']) / df['asset_cummax']
+        asset_max_drawdown = df['asset_drawdown'].min()
+
         performance_stats = {
             'initial_value': initial_portfolio_valuation,
             'final_value': final_portfolio_valuation,
             'win_rate': win_rate,
             'portfolio_return': portfolio_return,
             'asset_return': asset_return,
+            'portfolio_max_drawdown': portfolio_max_drawdown,
+            'asset_max_drawdown': asset_max_drawdown,
             'performance': df
         }
 
@@ -297,6 +309,8 @@ class Portfolio:
         # Adjust the layout and show the plot
         plt.tight_layout()
         plt.show()
+
+        return results
 
     # Private helper methods
     def _update_orders(self):

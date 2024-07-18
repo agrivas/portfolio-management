@@ -1,0 +1,2 @@
+strategy,symbol,start_date,end_date,frequency,cci_length,cci_threshold,adx_length,adx_threshold,rsi_length,rsi_oversold,supertrend_length,supertrend_multiplier,trail_percentage,take_profit_percentage,win_rate,portfolio_return,asset_return,portfolio_max_drawdown,asset_max_drawdown
+CciStAdxStrategy,BTC-GBP,2023-01-01,2024-01-01,1h,24,-50,12,30,,,,,0.02,0.1,0.6842105263157895,0.25093880928895285,1.4267466074777784,-0.058243856559662285,-0.21125479095731878

@@ -4,8 +4,9 @@ from robo_trader.feed import Feed, Ohlcv
 import pandas as pd
 
 class YFinanceFeed(Feed):
-    def __init__(self, interval: str = '1d'):
+    def __init__(self, interval: str = '1d', invert_pair: bool = False):
         self.interval = interval
+        self.invert_pair = invert_pair
     
     def get_historical_data(self, symbol: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
         period = None
@@ -25,7 +26,7 @@ class YFinanceFeed(Feed):
         ticker_data = yfinance.Ticker(symbol)
         
         # Get the most recent data point
-        df = ticker_data.history(interval=self.interval, period="max")
+        df = ticker_data.history(interval=self.interval, period="1d")  # Changed to "1d" to get the latest data
         
         return self._format_dataframe(df)
 
@@ -46,6 +47,15 @@ class YFinanceFeed(Feed):
         }
         df = df.rename(columns=new_names)
 
+        if self.invert_pair:
+            # Invert the price columns (Open, High, Low, Close)
+            for col in [Ohlcv.OPEN, Ohlcv.HIGH, Ohlcv.LOW, Ohlcv.CLOSE]:
+                df[col] = 1 / df[col]
+            
+            # Adjust the volume
+            df[Ohlcv.VOLUME] = df[Ohlcv.VOLUME] * df[Ohlcv.CLOSE]
+            
+            # Swap High and Low
+            df[Ohlcv.HIGH], df[Ohlcv.LOW] = 1 / df[Ohlcv.LOW], 1 / df[Ohlcv.HIGH]
+
         return df
-
-

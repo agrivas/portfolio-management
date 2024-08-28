@@ -6,6 +6,7 @@ import uuid
 from enum import Enum
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 class PositionSide(str, Enum):
     LONG = "long"
@@ -166,7 +167,11 @@ class Portfolio:
             "uuid": self.uuid,
             "autosave": self.autosave
         }
-        filename = f"portfolio_{self.uuid}.json"
+        
+        # Create portfolios folder if it doesn't exist
+        os.makedirs('portfolios', exist_ok=True)
+        
+        filename = f"portfolios/portfolio_{self.uuid}.json"
         with open(filename, 'w') as f:
             json.dump(state, f, indent=4, default=str)  # Use indent=4 for human-readable formatting and default=str to handle datetime objects
 
@@ -245,6 +250,8 @@ class Portfolio:
             'initial_value': initial_portfolio_valuation,
             'final_value': final_portfolio_valuation,
             'win_rate': win_rate,
+            'wins': winning_trades,
+            'trades': total_trades,
             'portfolio_return': portfolio_return,
             'asset_return': asset_return,
             'portfolio_max_drawdown': portfolio_max_drawdown,

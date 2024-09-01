@@ -12,9 +12,5 @@ class Ohlcv:
 
 class Feed(ABC):
     @abstractmethod
-    def get_live_data(self, symbol: str) -> pd.DataFrame:
-        pass
-
-    @abstractmethod
-    def get_historical_data(self, symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
+    def get_data(self, symbol: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
         pass

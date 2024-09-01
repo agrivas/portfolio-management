@@ -51,7 +51,7 @@ class Order:
 
 class Broker(ABC):
     @abstractmethod
-    def create_order(self, symbol: str, order_type: str, order_side: str, cash_amount: float, trail: float = None, limit: float = None, stop: float = None, take_profit: float = None) -> Order:
+    def create_order(self, symbol: str, order_type: str, order_side: str, quantity: float = None, cash_amount: float = None, trail: float = None, limit: float = None, stop: float = None, take_profit: float = None) -> Order:
         pass
 
     @abstractmethod

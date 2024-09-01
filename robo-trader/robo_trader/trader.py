@@ -33,7 +33,7 @@ class Trader:
         signal.signal(signal.SIGINT, signal_handler)
 
         while True:
-            current_data = self.feed.get_live_data(self.symbol)
+            current_data = self.feed.get_data(self.symbol)
             if not current_data.empty:
                 if (self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp):
                     self.last_data_timestamp = current_data['date'].max()
@@ -57,7 +57,7 @@ class Trader:
 
         prices_since = train_since if train_since else start_date
 
-        prices = self.feed.get_historical_data(self.symbol, prices_since, end_date)
+        prices = self.feed.get_data(self.symbol, prices_since, end_date)
         if prices.empty:
             print("No historical data available for backtesting.")
             return

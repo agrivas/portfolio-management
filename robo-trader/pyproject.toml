@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "robo-trader"
-version = "0.5.31"
+version = "0.6.2"
 description = ""
 authors = ["Argiris Grivas <argiris.grivas@gmail.com>"]
 readme = "README.md"
@@ -11,6 +11,7 @@ pandas = "^2.2.2"
 yfinance = "^0.2.40"
 advanced-ta = {path = "../advanced-ta"}
 ta = "^0.11.0"
+ccxt = "^4.3.93"
 
 
 [tool.poetry.group.dev.dependencies]

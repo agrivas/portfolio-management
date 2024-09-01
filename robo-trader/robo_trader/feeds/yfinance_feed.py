@@ -1,32 +1,24 @@
 import yfinance
-from datetime import datetime
+from datetime import datetime, timedelta
 from robo_trader.feed import Feed, Ohlcv
 import pandas as pd
 
 class YFinanceFeed(Feed):
-    def __init__(self, interval: str = '1d', invert_pair: bool = False):
+    def __init__(self, interval: str = '1d', invert_pair: bool = False, default_period: timedelta = timedelta(days=365)):
         self.interval = interval
         self.invert_pair = invert_pair
+        self.default_period = default_period
     
-    def get_historical_data(self, symbol: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
-        period = None
-        if start_date is None and end_date is None:
-            period = 'max'
-
+    def get_data(self, symbol: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
         ticker_data = yfinance.Ticker(symbol)
 
-        if period is not None:
-            df = ticker_data.history(interval=self.interval, period=period)
-        else:            
-            df = ticker_data.history(interval=self.interval, start=start_date, end=end_date)
+        if end_date is None:
+            end_date = datetime.now()
 
-        return self._format_dataframe(df)
+        if start_date is None:
+            start_date = end_date - self.default_period
 
-    def get_live_data(self, symbol: str) -> pd.DataFrame:
-        ticker_data = yfinance.Ticker(symbol)
-        
-        # Get the most recent data point
-        df = ticker_data.history(interval=self.interval, period="1d")  # Changed to "1d" to get the latest data
+        df = ticker_data.history(interval=self.interval, start=start_date, end=end_date)
         
         return self._format_dataframe(df)
 

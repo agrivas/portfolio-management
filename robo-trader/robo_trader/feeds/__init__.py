@@ -1,3 +1,4 @@
-from .yfinance import YFinanceFeed
+from .yfinance_feed import YFinanceFeed
+from .cctx_feed import CCXTFeed
 
-__all__ = ['YFinanceFeed']
+__all__ = ['YFinanceFeed', 'CCXTFeed']

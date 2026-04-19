@@ -1,5 +1,25 @@
-/notebooks/.ipynb_checkpoints
-/data/kraken
-/data/lorentzian
+# Data (large files, potentially private)
+data/
+
+# Python environments
+.venv/
+robo-trader/.venv/
+advanced-ta/.venv/
+
+# Generated/compiled files
 **/__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Notebooks
+/notebooks/.ipynb_checkpoints
 notebooks/portfolios
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

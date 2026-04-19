@@ -4,13 +4,14 @@ from datetime import datetime, timedelta
 from robo_trader.feed import Feed, Ohlcv
 
 class CCXTFeed(Feed):
-    def __init__(self, exchange_id: str, api_key: str, secret: str, interval: str = '1d', default_period: timedelta = timedelta(days=365)):
+    def __init__(self, exchange_id: str, api_key: str = '', secret: str = '', interval: str = '1d', invert_pair: bool = False, default_period: timedelta = timedelta(days=365)):
         self.exchange = getattr(ccxt, exchange_id)({
             'apiKey': api_key,
             'secret': secret,
             'enableRateLimit': True,
         })
         self.interval = interval
+        self.invert_pair = invert_pair
         self.default_period = default_period
 
     def get_data(self, symbol: str, start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
@@ -36,11 +37,23 @@ class CCXTFeed(Feed):
                     break
 
             df = pd.DataFrame(all_ohlcv, columns=[Ohlcv.DATE, Ohlcv.OPEN, Ohlcv.HIGH, Ohlcv.LOW, Ohlcv.CLOSE, Ohlcv.VOLUME])
-            df[Ohlcv.DATE] = pd.to_datetime(df[Ohlcv.DATE], unit='ms')
+            df[Ohlcv.DATE] = pd.to_datetime(df[Ohlcv.DATE], unit='ms').dt.tz_localize('UTC')
             
-            df = df[df[Ohlcv.DATE] <= end_date]
+            if len(df) > 0 and end_date is not None:
+                if isinstance(end_date, datetime):
+                    end_date = pd.Timestamp(end_date)
+                if end_date.tzinfo is None:
+                    end_date = end_date.tz_localize('UTC')
+                df = df[df[Ohlcv.DATE] <= end_date]
 
             df.set_index(Ohlcv.DATE, inplace=True)
+            
+            if self.invert_pair:
+                for col in [Ohlcv.OPEN, Ohlcv.HIGH, Ohlcv.LOW, Ohlcv.CLOSE]:
+                    df[col] = 1 / df[col]
+                df[Ohlcv.VOLUME] = df[Ohlcv.VOLUME] * df[Ohlcv.CLOSE]
+                df[Ohlcv.HIGH], df[Ohlcv.LOW] = 1 / df[Ohlcv.LOW], 1 / df[Ohlcv.HIGH]
+            
             return df
 
         except ccxt.NetworkError as e:

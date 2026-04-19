@@ -4,6 +4,7 @@ version = "0.6.2"
 description = ""
 authors = ["Argiris Grivas <argiris.grivas@gmail.com>"]
 readme = "README.md"
+packages = [{include = "robo_trader"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,20 +1,18 @@
-# Data (large files, potentially private)
+# Data folders
 data/
+portfolios/
 
 # Python environments
 .venv/
-robo-trader/.venv/
-advanced-ta/.venv/
 
 # Generated/compiled files
-**/__pycache__/
+__pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
 
 # Notebooks
-/notebooks/.ipynb_checkpoints
-notebooks/portfolios
+.ipynb_checkpoints/
 
 # IDE
 .vscode/

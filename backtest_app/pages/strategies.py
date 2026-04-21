@@ -78,6 +78,10 @@ with st.sidebar:
     # Strategy
     st.header("Strategy")
     strategies = discover_strategies()
+    st.write("")
+    if st.button("Reload", key="reload_strategies"):
+        st.rerun()
+    
     if not strategies:
         st.info("No strategies found")
         selected_strategy = None

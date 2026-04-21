@@ -96,5 +96,7 @@ Select which primitive indicators to display below the price chart. These are in
 | `adx_ema` | ADX + EMA crossover | `adx`, `ema_*`, `buy_signal`, `sell_signal` |
 | `rsi_sma_adx` | RSI + SMA + ADX | `rsi_*`, `sma_*`, `adx`, `buy_signal` |
 | `rsi_v_recovery` | RSI V-recovery pattern | `rsi`, `v_recovery`, `buy_signal` |
+| `bollinger_supertrend` | Bollinger + Supertrend blend | `bollinger_*`, `supertrend`, `buy_signal`, `sell_signal` |
+| `volume_climax` | Volume Climax with follow-through | `volume_spike`, `climax`, `buy_signal`, `sell_signal` |
 
 **Note**: Composite indicators generate signals but don't auto-display panels. Use the "Display Panels" section to add RSI, MACD, etc. below the chart.

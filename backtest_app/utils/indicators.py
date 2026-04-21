@@ -83,6 +83,9 @@ DISPLAY_PANEL_OPTIONS = [
     'Supertrend',
     'ATR',
     'Moving Averages',
+    'OBV',
+    'CMF',
+    'VWAP',
 ]
 
 
@@ -188,6 +191,29 @@ def build_panels(df: pd.DataFrame, display_panels: List[str]) -> List[Dict[str, 
                 'title': 'Moving Averages',
             })
 
+    if 'OBV' in display_panels and 'obv' in cols:
+        panels.append({
+            'type': 'line',
+            'columns': ['obv'],
+            'title': 'OBV',
+        })
+
+    if 'CMF' in display_panels and 'cmf' in cols:
+        panels.append({
+            'type': 'oscillator',
+            'column': 'cmf',
+            'title': 'CMF',
+            'lower': -0.1,
+            'upper': 0.1,
+        })
+
+    if 'VWAP' in display_panels and 'vwap' in cols:
+        panels.append({
+            'type': 'line',
+            'columns': ['vwap'],
+            'title': 'VWAP',
+        })
+
     return panels
 
 
@@ -240,7 +266,8 @@ def plot_multi_panel(
         panel_type = panel.get('type', 'line')
 
         if panel_type == 'price':
-            ax.plot(df.index, df['close'], label='Close', color='blue', alpha=0.7)
+            close_data = np.ma.masked_invalid(df['close'].values)
+            ax.plot(df.index, close_data, label='Close', color='blue', alpha=0.7)
             if 'markers' in panel:
                 for marker_name, color in panel['markers'].items():
                     if marker_name in df.columns:
@@ -260,7 +287,9 @@ def plot_multi_panel(
             title = panel.get('title', '')
             for col in panel.get('columns', []):
                 if col in df.columns:
-                    ax.plot(df.index, df[col], label=col, alpha=0.7)
+                    col_data = df[col].values
+                    col_data = np.ma.masked_invalid(col_data)
+                    ax.plot(df.index, col_data, label=col, alpha=0.7)
             if title in ['Bollinger Bands', 'Moving Averages', 'Supertrend', 'ATR']:
                 ax.plot(df.index, df['close'], label='Close', color='blue', alpha=0.3, linewidth=0.5)
             ax.legend()
@@ -268,13 +297,17 @@ def plot_multi_panel(
         elif panel_type == 'histogram':
             col = panel.get('column')
             if col and col in df.columns:
-                ax.bar(df.index, df[col], color=panel.get('color', 'gray'), alpha=0.5)
+                col_data = df[col].values
+                col_data = np.ma.masked_invalid(col_data)
+                ax.bar(df.index, col_data, color=panel.get('color', 'gray'), alpha=0.5)
             ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
 
         elif panel_type == 'oscillator':
             col = panel.get('column')
             if col and col in df.columns:
-                ax.plot(df.index, df[col], label=col, color='purple')
+                col_data = df[col].values
+                col_data = np.ma.masked_invalid(col_data)
+                ax.plot(df.index, col_data, label=col, color='purple')
                 if 'lower' in panel and panel['lower'] is not None:
                     ax.axhline(y=panel['lower'], color='green', linestyle='--', alpha=0.5)
                 if 'upper' in panel and panel['upper'] is not None:

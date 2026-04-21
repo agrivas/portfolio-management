@@ -79,6 +79,10 @@ with st.sidebar:
 
     st.header("Indicators (to Run)")
     indicators = discover_indicators()
+    st.write("")
+    if st.button("Reload", key="reload_indicators"):
+        st.rerun()
+    
     if not indicators:
         st.info("No experiments")
         selected_indicators = []

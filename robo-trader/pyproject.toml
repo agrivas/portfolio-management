@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "robo_trader"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 pandas = "^2.2.2"
 yfinance = "^0.2.40"
 advanced-ta = {path = "../advanced-ta"}

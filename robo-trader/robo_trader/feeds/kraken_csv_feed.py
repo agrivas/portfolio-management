@@ -4,7 +4,17 @@ from robo_trader.feed import Feed, Ohlcv
 import os
 
 class KrakenCSVFeed(Feed):
-    def __init__(self, data_dir: str, interval: str = '15m'):
+    def __init__(self, data_dir: str = None, interval: str = '15m'):
+        if data_dir is None:
+            module_dir = os.path.dirname(os.path.abspath(__file__))
+            data_dir = os.path.normpath(os.path.join(module_dir, '..', '..', '..', 'data', 'kraken'))
+        
+        if not os.path.isdir(data_dir):
+            raise ValueError(
+                f"Data directory not found: {data_dir}\n"
+                f"Provide data_dir parameter or ensure data/kraken/ exists."
+            )
+        
         self.data_dir = data_dir
         self.interval = interval
         

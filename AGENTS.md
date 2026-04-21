@@ -66,8 +66,8 @@ class MyStrategy(Strategy):
 
 Data is stored in `/data/` but excluded from git.
 
-### Kraken OHLCV Data (`data/kraken/master_q4/`)
-- XBTUSD, ETHUSD, SOLUSD (with EUR/GBP/USDT variants)
+### Kraken OHLCV Data (`data/kraken/`)
+- XBT, ETH, XRP, BNB, SOL paired with USD, EUR, GBP
 - Pre-aggregated to timeframes: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d
 - Date range: 2013 to late 2025
 
@@ -80,10 +80,7 @@ Data is stored in `/data/` but excluded from git.
 ```python
 from robo_trader.feeds import KrakenCSVFeed
 
-feed = KrakenCSVFeed(
-    data_dir="/data/kraken/master_q4",
-    interval="15m"
-)
+feed = KrakenCSVFeed(interval="15m")
 data = feed.get_data("XBTUSD")
 ```
 

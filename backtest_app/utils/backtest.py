@@ -79,7 +79,7 @@ def run_backtest(
     transaction_cost: float = 0.001,
     trailing_stop_penalty_relief: float = 0.75,
 ) -> dict:
-    data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'kraken', 'master_q4')
+    data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'kraken')
     symbol = 'ETHUSD'
 
     feed = KrakenCSVFeed(data_dir=data_dir, interval='15m')

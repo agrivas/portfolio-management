@@ -261,7 +261,7 @@ def plot_multi_panel(
             for col in panel.get('columns', []):
                 if col in df.columns:
                     ax.plot(df.index, df[col], label=col, alpha=0.7)
-            if title in ['MACD', 'Bollinger Bands', 'Moving Averages', 'Supertrend', 'ATR']:
+            if title in ['Bollinger Bands', 'Moving Averages', 'Supertrend', 'ATR']:
                 ax.plot(df.index, df['close'], label='Close', color='blue', alpha=0.3, linewidth=0.5)
             ax.legend()
 

@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 import sys
 import os
 import logging
+import json
 
-# Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,15 @@ from utils.indicators import (
     get_default_params,
     run_indicator,
     plot_multi_panel,
+    build_panels,
+    get_signal_columns,
+    DISPLAY_PANEL_OPTIONS,
 )
 
 st.set_page_config(page_title="Indicator Experiments", layout="wide")
 
 st.title("Indicator Experiments")
 
-# === UI CONTROLS (no data loading) ===
 with st.sidebar:
     st.header("Data")
 
@@ -75,7 +77,7 @@ with st.sidebar:
     
     st.caption(f"📅 {(end_date - start_date).days} days")
 
-    st.header("Indicators")
+    st.header("Indicators (to Run)")
     indicators = discover_indicators()
     if not indicators:
         st.info("No experiments")
@@ -87,34 +89,58 @@ with st.sidebar:
             default=list(indicators.keys())[:1] if indicators else None
         )
 
-# Indicator params
+    st.header("Display Panels")
+    selected_panels = st.multiselect(
+        "Show below price",
+        DISPLAY_PANEL_OPTIONS,
+        default=['RSI'] if 'RSI' in DISPLAY_PANEL_OPTIONS else None
+    )
+
 indicator_params = {}
 if selected_indicators:
-    with st.sidebar.expander("Parameters"):
-        for ind_name in selected_indicators:
-            defaults = get_default_params(ind_name)
-            if defaults:
-                st.markdown(f"**{ind_name}**")
-                cols = st.columns(2)
-                for i, (param_name, default_value) in enumerate(defaults.items()):
-                    col = cols[i % 2]
-                    key = f"{ind_name}_{param_name}"
-                    if isinstance(default_value, int):
-                        indicator_params[f"{ind_name}.{param_name}"] = col.number_input(
-                            param_name, value=int(default_value), key=key
-                        )
-                    elif isinstance(default_value, float):
-                        indicator_params[f"{ind_name}.{param_name}"] = col.number_input(
-                            param_name, value=float(default_value), key=key
-                        )
-                    else:
-                        indicator_params[f"{ind_name}.{param_name}"] = col.text_input(
-                            param_name, value=str(default_value), key=key
-                        )
+    params_mode = st.sidebar.radio("Params Mode", ["UI", "JSON"], horizontal=True)
+    
+    if params_mode == "UI":
+        with st.sidebar.expander("Parameters (UI)"):
+            for ind_name in selected_indicators:
+                defaults = get_default_params(ind_name)
+                if defaults:
+                    st.markdown(f"**{ind_name}**")
+                    cols = st.columns(2)
+                    for i, (param_name, default_value) in enumerate(defaults.items()):
+                        col = cols[i % 2]
+                        key = f"{ind_name}_{param_name}"
+                        if isinstance(default_value, int):
+                            indicator_params[f"{ind_name}.{param_name}"] = col.number_input(
+                                param_name, value=int(default_value), key=key
+                            )
+                        elif isinstance(default_value, float):
+                            indicator_params[f"{ind_name}.{param_name}"] = col.number_input(
+                                param_name, value=float(default_value), key=key
+                            )
+                        else:
+                            indicator_params[f"{ind_name}.{param_name}"] = col.text_input(
+                                param_name, value=str(default_value), key=key
+                            )
+                else:
+                    st.caption(f"{ind_name}: no params")
+    else:
+        st.sidebar.markdown("**Parameters (JSON)**")
+        json_input = st.sidebar.text_area(
+            "Enter JSON params",
+            value="{}",
+            height=100,
+            help="e.g., {\"rsi_length\": 14, \"rsi_oversold\": 30}"
+        )
+        try:
+            indicator_params = json.loads(json_input)
+            st.sidebar.success("Valid JSON")
+        except json.JSONDecodeError as e:
+            st.sidebar.error(f"Invalid JSON: {e}")
+            indicator_params = {}
 
-# RUN BUTTON
 if not selected_indicators:
-    st.warning("Select at least one indicator")
+    st.warning("Select at least one indicator to run")
 else:
     run_button = st.sidebar.button("Load & Run", type="primary")
 
@@ -137,38 +163,22 @@ else:
             logger.warning("No data loaded")
             st.error("No data. Try different dates.")
         else:
-            # Show transient success message (appears then fades)
             with st.empty():
                 st.success(f"Loaded {len(data):,} rows: {data.index[0]} to {data.index[-1]}")
                 import time
-                time.sleep(2)  # Brief pause so user sees it
+                time.sleep(2)
 
-            # Run indicators
             result_df = data.copy()
             for ind_name in selected_indicators:
-                params = {k.split('.')[1]: v for k, v in indicator_params.items() if k.startswith(f"{ind_name}.")}
+                if params_mode == "JSON":
+                    params = {k: v for k, v in indicator_params.items() if not '.' in k}
+                else:
+                    params = {k.split('.')[1]: v for k, v in indicator_params.items() if k.startswith(f"{ind_name}.")}
                 result_df = run_indicator(ind_name, result_df, params)
                 logger.info(f"Ran indicator: {ind_name}")
 
-            # Plot first (metrics below)
             try:
-                signal_columns = [col for col in result_df.columns if 'signal' in col.lower() or 'buy' in col.lower()]
-                
-                panels = [
-                    {'type': 'price', 'title': f'{symbol}', 
-                     'markers': {col: 'green' for col in signal_columns}},
-                ]
-                
-                for col in ['macd', 'macd_signal']:
-                    if col in result_df.columns:
-                        panels.append({'type': 'line', 'columns': [col], 'title': 'MACD'})
-                        break
-                
-                for col in ['rsi']:
-                    if col in result_df.columns:
-                        panels.append({'type': 'oscillator', 'column': col, 'title': 'RSI', 'lower': 30, 'upper': 70})
-                        break
-
+                panels = build_panels(result_df, selected_panels)
                 fig, axes = plot_multi_panel(result_df, panels, figsize=(14, 10))
                 st.pyplot(fig)
 
@@ -177,12 +187,20 @@ else:
                 st.error(f"Plot error: {e}")
                 st.write(result_df.tail(20))
 
-            # Metrics BELOW the graphs
             st.divider()
-            if signal_columns:
-                signal_count = sum(result_df[col].sum() for col in signal_columns if col in result_df.columns)
-                logger.info(f"Total signals: {signal_count}")
-                st.metric("Total Signals", signal_count)
+            
+            buy_cols, sell_cols = get_signal_columns(result_df)
+            all_signal_cols = buy_cols + sell_cols
+            
+            if all_signal_cols:
+                total_signals = sum(result_df[col].sum() for col in all_signal_cols if col in result_df.columns)
+                buy_signals = sum(result_df[col].sum() for col in buy_cols if col in result_df.columns)
+                sell_signals = sum(result_df[col].sum() for col in sell_cols if col in result_df.columns)
+                
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Total Signals", total_signals)
+                col2.metric("Buy Signals", buy_signals)
+                col3.metric("Sell Signals", sell_signals)
 
             with st.expander("Data"):
                 st.dataframe(result_df.tail(50))

@@ -73,6 +73,124 @@ def get_default_params(name: str) -> dict:
     return getattr(module, 'PARAMS', {})
 
 
+DISPLAY_PANEL_OPTIONS = [
+    'MACD',
+    'RSI', 
+    'CCI',
+    'ADX',
+    'MFI',
+    'Bollinger',
+    'Supertrend',
+    'ATR',
+    'Moving Averages',
+]
+
+
+def get_signal_columns(df: pd.DataFrame) -> tuple:
+    buy_columns = [col for col in df.columns if col == 'buy_signal']
+    sell_columns = [col for col in df.columns if col == 'sell_signal']
+    return buy_columns, sell_columns
+
+
+def build_panels(df: pd.DataFrame, display_panels: List[str]) -> List[Dict[str, Any]]:
+    panels = []
+    cols = df.columns
+
+    buy_cols, sell_cols = get_signal_columns(df)
+    markers = {}
+    for col in buy_cols:
+        markers[col] = 'green'
+    for col in sell_cols:
+        markers[col] = 'red'
+
+    panels.append({
+        'type': 'price',
+        'title': 'Price',
+        'markers': markers,
+    })
+
+    if 'MACD' in display_panels and 'macd' in cols:
+        macd_cols = [c for c in ['macd', 'macd_signal', 'macd_hist'] if c in cols]
+        if macd_cols:
+            panels.append({
+                'type': 'line',
+                'columns': macd_cols,
+                'title': 'MACD',
+            })
+
+    if 'RSI' in display_panels and 'rsi' in cols:
+        panels.append({
+            'type': 'oscillator',
+            'column': 'rsi',
+            'title': 'RSI',
+            'lower': 30,
+            'upper': 70,
+        })
+
+    if 'CCI' in display_panels and 'cci' in cols:
+        panels.append({
+            'type': 'oscillator',
+            'column': 'cci',
+            'title': 'CCI',
+            'lower': -250,
+            'upper': 250,
+        })
+
+    if 'ADX' in display_panels and 'adx' in cols:
+        panels.append({
+            'type': 'oscillator',
+            'column': 'adx',
+            'title': 'ADX',
+            'lower': 0,
+            'upper': 25,
+        })
+
+    if 'MFI' in display_panels and 'mfi' in cols:
+        panels.append({
+            'type': 'oscillator',
+            'column': 'mfi',
+            'title': 'MFI',
+            'lower': 20,
+            'upper': 80,
+        })
+
+    if 'Bollinger' in display_panels:
+        bollinger_cols = [c for c in ['bollinger_mid', 'bollinger_upper', 'bollinger_lower'] if c in cols]
+        if bollinger_cols:
+            panels.append({
+                'type': 'line',
+                'columns': bollinger_cols,
+                'title': 'Bollinger Bands',
+            })
+
+    if 'Supertrend' in display_panels and 'supertrend' in cols:
+        panels.append({
+            'type': 'line',
+            'columns': ['supertrend'],
+            'title': 'Supertrend',
+        })
+
+    if 'ATR' in display_panels and 'atr' in cols:
+        panels.append({
+            'type': 'line',
+            'columns': ['atr'],
+            'title': 'ATR',
+        })
+
+    if 'Moving Averages' in display_panels:
+        ema_cols = [c for c in cols if c.startswith('ema_') or c.startswith('sma_')]
+        if len(ema_cols) > 2:
+            ema_cols = ema_cols[:2]
+        if ema_cols:
+            panels.append({
+                'type': 'line',
+                'columns': ema_cols,
+                'title': 'Moving Averages',
+            })
+
+    return panels
+
+
 def plot_price_with_indicators(
     df: pd.DataFrame,
     indicators: List[str],
@@ -127,20 +245,24 @@ def plot_multi_panel(
                 for marker_name, color in panel['markers'].items():
                     if marker_name in df.columns:
                         mask = df[marker_name] == True
+                        marker = '^' if 'green' in str(color) else 'v'
                         ax.scatter(
                             df.index[mask],
                             df.loc[mask, 'close'],
                             color=color,
-                            marker='^',
+                            marker=marker,
                             s=100,
                             label=marker_name,
                         )
             ax.legend()
 
         elif panel_type == 'line':
+            title = panel.get('title', '')
             for col in panel.get('columns', []):
                 if col in df.columns:
                     ax.plot(df.index, df[col], label=col, alpha=0.7)
+            if title in ['MACD', 'Bollinger Bands', 'Moving Averages', 'Supertrend', 'ATR']:
+                ax.plot(df.index, df['close'], label='Close', color='blue', alpha=0.3, linewidth=0.5)
             ax.legend()
 
         elif panel_type == 'histogram':
@@ -153,9 +275,9 @@ def plot_multi_panel(
             col = panel.get('column')
             if col and col in df.columns:
                 ax.plot(df.index, df[col], label=col, color='purple')
-                if 'lower' in panel:
+                if 'lower' in panel and panel['lower'] is not None:
                     ax.axhline(y=panel['lower'], color='green', linestyle='--', alpha=0.5)
-                if 'upper' in panel:
+                if 'upper' in panel and panel['upper'] is not None:
                     ax.axhline(y=panel['upper'], color='red', linestyle='--', alpha=0.5)
             ax.legend()
 

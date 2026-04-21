@@ -30,5 +30,6 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     df['v_recovery'] = df['v_recovery'].fillna(False)
 
     df['buy_signal'] = df['v_recovery']
+    df['sell_signal'] = False
 
     return df

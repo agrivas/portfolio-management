@@ -2,9 +2,9 @@ import os
 import sys
 import importlib.util
 from typing import Dict, List, Any, Optional
+from datetime import datetime, timedelta
 
 import pandas as pd
-import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'robo-trader'))
 
@@ -48,7 +48,8 @@ def load_strategy_class(name: str):
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
         if isinstance(attr, type) and hasattr(attr, 'evaluate_market'):
-            return attr
+            if attr_name != 'Strategy' and not attr_name.startswith('_'):
+                return attr
 
     return None
 
@@ -83,14 +84,11 @@ def run_backtest(
     symbol = 'ETHUSD'
 
     feed = KrakenCSVFeed(data_dir=data_dir, interval='15m')
-
     strategy = strategy_class(strategy_params)
-
     backtest_broker = BacktestBroker(
         transaction_cost=transaction_cost,
         trailing_stop_penalty_relief=trailing_stop_penalty_relief
     )
-
     trader = Trader(
         symbol=symbol,
         initial_cash=initial_cash,
@@ -103,13 +101,11 @@ def run_backtest(
         start_date = data.index[0]
         end_date = data.index[-1]
     else:
-        from datetime import datetime, timedelta
         end_dt = datetime(2025, 12, 31)
         start_dt = end_dt - timedelta(days=30)
-        # Make timezone-aware (UTC)
         start_date = pd.Timestamp(start_dt, tz='UTC')
         end_date = pd.Timestamp(end_dt, tz='UTC')
-    
+
     result = trader.backtest(
         start_date=start_date,
         end_date=end_date,

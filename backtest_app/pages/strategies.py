@@ -139,12 +139,12 @@ else:
     else:
         st.success(f"Loaded {len(data):,} rows")
 
-        with st.spinner("Running backtest..."):
-            strategy_class = load_strategy_class(selected_strategy)
-            
-            if strategy_class is None:
-                st.error(f"Could not load: {selected_strategy}")
-            else:
+        strategy_class = load_strategy_class(selected_strategy)
+
+        if strategy_class is None:
+            st.error(f"Could not load: {selected_strategy}")
+        else:
+            with st.spinner("Running backtest..."):
                 result = run_backtest(
                     strategy_class=strategy_class,
                     strategy_params=strategy_params,
@@ -153,23 +153,23 @@ else:
                     transaction_cost=transaction_cost,
                 )
 
-                if result.get('success'):
-                    col1, col2, col3, col4 = st.columns(4)
-                    col1.metric("Initial", f"${result['stats']['initial_value']:,.0f}")
-                    col2.metric("Final", f"${result['stats']['final_value']:,.0f}")
-                    col3.metric("Return", f"{result['stats']['portfolio_return']*100:.1f}%")
-                    col4.metric("Win", f"{result['stats']['win_rate']*100:.0f}%")
+            if result.get('success'):
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Initial", f"${result['stats']['initial_value']:,.0f}")
+                col2.metric("Final", f"${result['stats']['final_value']:,.0f}")
+                col3.metric("Return", f"{result['stats']['portfolio_return']*100:.1f}%")
+                col4.metric("Win", f"{result['stats']['win_rate']*100:.0f}%")
 
-                    col5, col6 = st.columns(2)
-                    col5.metric("Trades", result['stats']['trades'])
-                    col6.metric("Max DD", f"{result['stats']['portfolio_max_drawdown']*100:.1f}%")
+                col5, col6 = st.columns(2)
+                col5.metric("Trades", result['stats']['trades'])
+                col6.metric("Max DD", f"{result['stats']['portfolio_max_drawdown']*100:.1f}%")
 
-                    st.text(format_backtest_stats(result['stats']))
+                st.text(format_backtest_stats(result['stats']))
 
-                    fig, axes = plot_backtest_results(result, figsize=(14, 8))
-                    st.pyplot(fig)
-                else:
-                    st.error(f"Backtest failed: {result.get('error')}")
+                fig, axes = plot_backtest_results(result, figsize=(14, 8))
+                st.pyplot(fig)
+            else:
+                st.error(f"Backtest failed: {result.get('error')}")
 
     with st.expander("Data"):
         st.dataframe(data.head(20))

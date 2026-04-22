@@ -246,6 +246,58 @@ class Portfolio:
         df['asset_drawdown'] = (df['asset_price'] - df['asset_cummax']) / df['asset_cummax']
         asset_max_drawdown = df['asset_drawdown'].min()
 
+        # Daily returns for Sharpe/Sortino
+        df['portfolio_daily_return'] = df['portfolio_value'].pct_change()
+        df['buy_hold_daily_return'] = df['asset_price'].pct_change()
+
+        # Sharpe Ratio (annualized)
+        import numpy as np
+        mean_ret = df['portfolio_daily_return'].mean()
+        std_ret = df['portfolio_daily_return'].std()
+        sharpe = (mean_ret / std_ret) * np.sqrt(252) if std_ret > 0 else 0
+
+        # Sortino Ratio (annualized, downside only)
+        downside_returns = df['portfolio_daily_return'][df['portfolio_daily_return'] < 0]
+        std_downside = downside_returns.std()
+        sortino = (mean_ret / std_downside) * np.sqrt(252) if std_downside > 0 else 0
+
+        # Buy&Hold Sharpe Ratio
+        mean_ret_bh = df['buy_hold_daily_return'].mean()
+        std_ret_bh = df['buy_hold_daily_return'].std()
+        sharpe_bh = (mean_ret_bh / std_ret_bh) * np.sqrt(252) if std_ret_bh > 0 else 0
+
+        # Buy&Hold Sortino Ratio
+        downside_returns_bh = df['buy_hold_daily_return'][df['buy_hold_daily_return'] < 0]
+        std_downside_bh = downside_returns_bh.std()
+        sortino_bh = (mean_ret_bh / std_downside_bh) * np.sqrt(252) if std_downside_bh > 0 else 0
+
+        # Expected Value (EV)
+        closed_positions = [pos for pos in self.positions if not pos.is_open]
+        if closed_positions:
+            returns = [(pos.close_price - pos.open_price) / pos.open_price for pos in closed_positions]
+            wins = [r for r in returns if r > 0]
+            losses = [r for r in returns if r < 0]
+            avg_win = np.mean(wins) if wins else 0
+            avg_loss = abs(np.mean(losses)) if losses else 0
+            ev = win_rate * avg_win - (1 - win_rate) * avg_loss if total_trades > 0 else 0
+        else:
+            ev = 0
+            avg_win = 0
+            avg_loss = 0
+
+        # Profit Factor
+        gross_profit = sum(wins) * len(closed_positions) * initial_portfolio_valuation if wins else 0
+        gross_loss = sum(losses) * len(closed_positions) * initial_portfolio_valuation if losses else 0
+        profit_factor = gross_profit / abs(gross_loss) if gross_loss != 0 else 0
+
+        # Max Run-up
+        portfolio_peak = df['portfolio_value'].max()
+        portfolio_max_runup = (portfolio_peak - initial_portfolio_valuation) / initial_portfolio_valuation
+
+        # Asset peak for comparison
+        asset_peak = df['asset_price'].max()
+        asset_max_runup = (asset_peak - initial_asset_price) / initial_asset_price
+
         performance_stats = {
             'initial_value': initial_portfolio_valuation,
             'final_value': final_portfolio_valuation,
@@ -256,6 +308,16 @@ class Portfolio:
             'asset_return': asset_return,
             'portfolio_max_drawdown': portfolio_max_drawdown,
             'asset_max_drawdown': asset_max_drawdown,
+            'sharpe': sharpe,
+            'sortino': sortino,
+            'sharpe_bh': sharpe_bh,
+            'sortino_bh': sortino_bh,
+            'ev': ev,
+            'avg_win': avg_win,
+            'avg_loss': avg_loss,
+            'profit_factor': profit_factor,
+            'portfolio_max_runup': portfolio_max_runup,
+            'asset_max_runup': asset_max_runup,
             'performance': df
         }
 

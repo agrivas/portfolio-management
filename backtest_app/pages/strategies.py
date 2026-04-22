@@ -154,17 +154,36 @@ else:
                 )
 
             if result.get('success'):
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Initial", f"${result['stats']['initial_value']:,.0f}")
-                col2.metric("Final", f"${result['stats']['final_value']:,.0f}")
-                col3.metric("Return", f"{result['stats']['portfolio_return']*100:.1f}%")
-                col4.metric("Win", f"{result['stats']['win_rate']*100:.0f}%")
+                stats = result['stats']
 
-                col5, col6 = st.columns(2)
-                col5.metric("Trades", result['stats']['trades'])
-                col6.metric("Max DD", f"{result['stats']['portfolio_max_drawdown']*100:.1f}%")
+                st.subheader("Performance Comparison")
 
-                st.text(format_backtest_stats(result['stats']))
+                comparison_data = [
+                    {"Metric": "Return", "Strategy": f"{stats['portfolio_return']*100:+.1f}%", "Buy & Hold": f"{stats['asset_return']*100:+.1f}%"},
+                    {"Metric": "Max Drawdown", "Strategy": f"{stats['portfolio_max_drawdown']*100:.1f}%", "Buy & Hold": f"{stats['asset_max_drawdown']*100:.1f}%"},
+                    {"Metric": "Max Run-up", "Strategy": f"{stats['portfolio_max_runup']*100:+.1f}%", "Buy & Hold": f"{stats['asset_max_runup']*100:+.1f}%"},
+                    {"Metric": "Sharpe", "Strategy": f"{stats['sharpe']:.2f}", "Buy & Hold": f"{stats['sharpe_bh']:.2f}"},
+                    {"Metric": "Sortino", "Strategy": f"{stats['sortino']:.2f}", "Buy & Hold": f"{stats['sortino_bh']:.2f}"},
+                ]
+                st.table(pd.DataFrame(comparison_data))
+
+                st.subheader("Trade Statistics")
+                trade_data = [
+                    {"Metric": "Trades", "Value": stats['trades']},
+                    {"Metric": "Win Rate", "Value": f"{stats['win_rate']*100:.0f}%"},
+                    {"Metric": "Wins", "Value": stats['wins']},
+                    {"Metric": "Losses", "Value": stats['trades'] - stats['wins']},
+                    {"Metric": "Avg Win", "Value": f"{stats['avg_win']*100:.1f}%"},
+                    {"Metric": "Avg Loss", "Value": f"{stats['avg_loss']*100:.1f}%"},
+                    {"Metric": "EV", "Value": f"{stats['ev']*100:.1f}%"},
+                    {"Metric": "Profit Factor", "Value": f"{stats['profit_factor']:.2f}"},
+                ]
+                st.table(pd.DataFrame(trade_data))
+
+                st.subheader("Portfolio Value")
+                col1, col2 = st.columns(2)
+                col1.metric("Initial", f"${stats['initial_value']:,.0f}")
+                col2.metric("Final", f"${stats['final_value']:,.0f}")
 
                 fig, axes = plot_backtest_results(result, figsize=(14, 8))
                 st.pyplot(fig)

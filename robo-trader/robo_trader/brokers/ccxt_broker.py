@@ -1,7 +1,10 @@
 import ccxt
+import logging
 from typing import Dict
 from datetime import datetime
 from robo_trader.broker import Broker, Order, OrderType, OrderStatus, Trade
+
+logger = logging.getLogger(__name__)
 
 class CCXTBroker(Broker):
     def __init__(self, exchange_id: str, api_key: str, secret: str):
@@ -25,18 +28,27 @@ class CCXTBroker(Broker):
         if take_profit:
             params['takeProfitPrice'] = take_profit
 
+        if quantity is None and cash_amount is not None:
+            ticker = self.exchange.fetch_ticker(symbol)
+            price = ticker['last']
+            quantity = cash_amount / price
+            logger.info(f"ORDER_CALC: Converted cash_amount to quantity for {symbol} | cash_amount={cash_amount}, price={price}, quantity={quantity}")
+
         try:
             if quantity is not None:
+                logger.info(f"ORDER_ATTEMPT: Sending {order_side.upper()} {order_type} {symbol} | quantity={quantity}, order_type={ccxt_order_type}")
                 ccxt_order = self.exchange.create_order(symbol, ccxt_order_type, ccxt_order_side, quantity, None, params)
-            elif cash_amount is not None:
-                ccxt_order = self.exchange.create_market_buy_order(symbol, cash_amount) if order_side.lower() == 'buy' else self.exchange.create_market_sell_order(symbol, cash_amount)
+                logger.info(f"ORDER_RESULT: Order filled {symbol} | filled_quantity={ccxt_order['amount']}, cost={ccxt_order.get('cost')}, avg_price={ccxt_order.get('average')}")
             else:
                 raise ValueError("Either quantity or cash_amount must be provided")
             
+            logger.info(f"ORDER {ccxt_order['side'].upper()} {ccxt_order['type']} {symbol} {ccxt_order['amount']}")
             return self._convert_to_order(ccxt_order)
         except ccxt.NetworkError as e:
+            log_event("ERROR", "ORDER_FAILED", f"Network error on {symbol}", f"error={str(e)}")
             raise Exception(f"Network error: {str(e)}")
         except ccxt.ExchangeError as e:
+            log_event("ERROR", "ORDER_FAILED", f"Exchange error on {symbol}", f"error={str(e)}")
             raise Exception(f"Exchange error: {str(e)}")
 
     def edit_order(self, order_id, stop):
@@ -69,6 +81,36 @@ class CCXTBroker(Broker):
         try:
             ticker = self.exchange.fetch_ticker(symbol)
             return ticker['last']
+        except ccxt.NetworkError as e:
+            raise Exception(f"Network error: {str(e)}")
+        except ccxt.ExchangeError as e:
+            raise Exception(f"Exchange error: {str(e)}")
+
+    def get_balance(self) -> dict:
+        try:
+            balance = self.exchange.fetch_balance()
+            return {
+                'free': balance.get('free', {}),
+                'used': balance.get('used', {}),
+                'total': balance.get('total', {})
+            }
+        except ccxt.NetworkError as e:
+            raise Exception(f"Network error: {str(e)}")
+        except ccxt.ExchangeError as e:
+            raise Exception(f"Exchange error: {str(e)}")
+
+    def get_open_positions(self, symbol: str = None) -> dict:
+        try:
+            open_orders = self.exchange.fetch_open_orders(symbol) if symbol else self.exchange.fetch_open_orders()
+            positions = {}
+            for order in open_orders:
+                if order['status'] == 'open':
+                    positions[order['symbol']] = {
+                        'quantity': order['amount'],
+                        'price': order.get('price'),
+                        'side': order['side']
+                    }
+            return positions
         except ccxt.NetworkError as e:
             raise Exception(f"Network error: {str(e)}")
         except ccxt.ExchangeError as e:

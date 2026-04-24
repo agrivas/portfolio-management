@@ -1,0 +1,10 @@
+datetime,severity,event_type,message,details
+2026-04-24T00:35:15.121960,INFO,CYCLE_START,Starting trading cycle,"strategy=simple_reversal, symbol=ETH/GBP, interval=15m"
+2026-04-24T00:35:15.140744,INFO,CONFIG,Trading parameters,"position_size_pct=0.5, stop_pct=0.01, take_profit_pct=0.1"
+2026-04-24T00:35:19.184046,INFO,BROKER_SYNC,Balance fetched,"free={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}, total={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}"
+2026-04-24T00:35:19.198636,INFO,BROKER_SYNC,GBP balance,available=7.6
+2026-04-24T00:35:26.046943,ERROR,CYCLE_FAILED,Trading cycle exception,error=No module named 'live_trader'
+2026-04-24T00:40:53.060668,INFO,CYCLE_START,Starting trading cycle,"strategy=simple_reversal, symbol=ETH/GBP, interval=15m"
+2026-04-24T00:40:53.083829,INFO,CONFIG,Trading parameters,"position_size_pct=0.5, stop_pct=0.01, take_profit_pct=0.1"
+2026-04-24T00:40:57.139056,INFO,BROKER_SYNC,Balance fetched,"free={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}, total={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}"
+2026-04-24T00:40:57.154376,INFO,BROKER_SYNC,GBP balance,available=7.6

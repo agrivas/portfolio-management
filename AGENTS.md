@@ -10,8 +10,20 @@ Personal crypto portfolio management, automated trading strategy backtesting, an
 | `advanced-ta/` | Technical analysis library (Lorentzian Classification) |
 | `robo-trader/` | Trading library package |
 | `backtest_app/` | Streamlit app for strategy development |
+| `live_trader/` | Live trading Streamlit app |
 | `notebooks/` | Jupyter notebooks (legacy) |
 | `data/` | **IGNORED** - data files |
+
+## Symbols
+
+Available trading pairs (for live trading via CCXT/Kraken):
+- ETH/BTC (Ethereum / Bitcoin)
+- ETH/GBP (Ethereum / Pound)
+- BTC/GBP (Bitcoin / Pound)
+- SOL/BTC (Solana / Bitcoin)
+- SOL/GBP (Solana / Pound)
+
+**Note**: Historical data in `data/kraken/` may use different symbols - live trading uses CCXT unified symbols which map Kraken's internal format (XBT → BTC).
 
 ## Development
 
@@ -24,6 +36,30 @@ cd backtest_app && poetry run streamlit run app.py
 
 # Run tests
 cd robo-trader && poetry run pytest
+```
+
+### Package Updates Workflow
+
+When modifying code in `robo-trader/` package (e.g., adding methods to brokers):
+
+1. **ALWAYS** run `poetry install` to sync changes to `.venv`
+2. **NEVER** manually copy files between `.venv` and source
+3. Test via `poetry run` commands, not direct python execution
+4. If changes don't appear, try: `rm -rf .venv && poetry install` (full reinstall)
+
+**Note**: Path dependencies sometimes cache stale. If code changes don't appear after install, force a full reinstall:
+```bash
+rm -rf .venv
+poetry install
+```
+
+Example:
+```bash
+# After editing robo-trader/robo_trader/brokers/ccxt_broker.py:
+poetry install  # Refreshes .venv with updated code
+
+# If that doesn't work:
+rm -rf .venv && poetry install
 ```
 
 ## backtest_app

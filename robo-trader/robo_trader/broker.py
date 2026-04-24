@@ -69,3 +69,11 @@ class Broker(ABC):
     @abstractmethod
     def get_price(self, symbol: str) -> float:
         pass
+
+    @abstractmethod
+    def get_balance(self) -> dict:
+        pass
+
+    @abstractmethod
+    def get_open_positions(self, symbol: str = None) -> dict:
+        pass

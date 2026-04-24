@@ -5,6 +5,9 @@ portfolios/
 # Python environments
 .venv/
 
+# Environment variables (API keys)
+.env
+
 # Generated/compiled files
 __pycache__/
 *.pyc

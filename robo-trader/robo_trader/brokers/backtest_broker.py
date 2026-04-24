@@ -87,6 +87,18 @@ class BacktestBroker(Broker):
     def get_price(self, symbol: str) -> float:
         return self.current_prices.get(symbol, 0)
 
+    def get_balance(self) -> dict:
+        """Stub for backtest - returns simulated balance."""
+        return {
+            'free': {'USD': self.cash},
+            'used': {},
+            'total': {'USD': self.cash}
+        }
+
+    def get_open_positions(self, symbol: str = None) -> dict:
+        """Stub for backtest - returns local positions via portfolio."""
+        return {}
+
     def update(self, timestamp: datetime, prices: Dict[str, float]):
         self.current_timestamp = timestamp
         self.current_prices = prices

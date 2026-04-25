@@ -1,32 +1,23 @@
-import json
 import os
 from pathlib import Path
 
-CONFIG_DIR = Path(__file__).parent
-CONFIG_FILE = CONFIG_DIR / "config.json"
-ENV_FILE = CONFIG_DIR / ".env"
+ENV_FILE = Path(__file__).parent / ".env"
 
-def load_env():
+def get_kraken_credentials() -> tuple:
     if not ENV_FILE.exists():
-        return
+        return "", ""
+    
+    api_key = ""
+    secret = ""
+    
     with open(ENV_FILE) as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 key, val = line.split("=", 1)
-                os.environ[key.strip()] = val.strip()
-
-def load_config() -> dict:
-    load_env()
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
-
-def save_config(config: dict):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(config, f, indent=2)
-
-def get_kraken_credentials() -> tuple:
-    load_env()
-    api_key = os.getenv("KRAKEN_API_KEY", "")
-    secret = os.getenv("KRAKEN_SECRET", "")
+                if key.strip() == "KRAKEN_API_KEY":
+                    api_key = val.strip()
+                elif key.strip() == "KRAKEN_SECRET":
+                    secret = val.strip()
+    
     return api_key, secret

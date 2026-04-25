@@ -77,3 +77,11 @@ class Broker(ABC):
     @abstractmethod
     def get_open_positions(self, symbol: str = None) -> dict:
         pass
+
+    @abstractmethod
+    def get_cash_balance(self, quote_currency: str) -> float:
+        pass
+
+    @abstractmethod
+    def get_asset_balance(self, base_currency: str) -> float:
+        pass

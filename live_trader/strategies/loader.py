@@ -1,19 +1,16 @@
 import importlib.util
 import logging
-import sys
 from pathlib import Path
 from typing import Type
 
 def get_strategies_dir() -> Path:
-    return Path(__file__).parent.parent.parent / "backtest_app" / "experiments" / "strategies"
+    return Path(__file__).parent.parent.parent / "robo-trader" / "robo_trader" / "strategies"
 
 STRATEGIES_DIR = get_strategies_dir()
 
 logger = logging.getLogger(__name__)
 
 def load_strategy_class(strategy_name: str) -> Type:
-    sys.path.insert(0, str(STRATEGIES_DIR))
-    
     file_path = STRATEGIES_DIR / f"{strategy_name}.py"
     if not file_path.exists():
         raise ValueError(f"Strategy not found: {strategy_name}")

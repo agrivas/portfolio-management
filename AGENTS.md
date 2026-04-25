@@ -10,9 +10,22 @@ Personal crypto portfolio management, automated trading strategy backtesting, an
 | `advanced-ta/` | Technical analysis library (Lorentzian Classification) |
 | `robo-trader/` | Trading library package |
 | `backtest_app/` | Streamlit app for strategy development |
-| `live_trader/` | Live trading Streamlit app |
+| `live_trader/` | Live trading API (FastAPI) + Streamlit UI |
 | `notebooks/` | Jupyter notebooks (legacy) |
 | `data/` | **IGNORED** - data files |
+
+## robo_trader Architecture
+
+The purpose of `robo_trader` is to abstract the process of trading and backtest by defining key components:
+
+| Component | Purpose |
+|------------|---------|
+| **Broker** | Abstraction for exchange connectivity (create_order, get_balance, sync) |
+| **Portfolio** | Manages cash, holdings, positions, state persistence |
+| **Feed** | Abstraction for market data (historical or live) |
+| **Strategy** | Evaluates market conditions and generates signals |
+
+Standardized interaction between components ensures strategies work identically in backtest and live trading.
 
 ## Symbols
 
@@ -28,7 +41,7 @@ Available trading pairs (for live trading via CCXT/Kraken):
 ## Development
 
 ```bash
-# Install dependencies
+# Install dependencies (allow up to 5 minutes)
 poetry install
 
 # Run backtest app
@@ -37,6 +50,20 @@ cd backtest_app && poetry run streamlit run app.py
 # Run tests
 cd robo-trader && poetry run pytest
 ```
+
+**Note:** poetry install can take several minutes. Use a longer timeout if needed.
+
+### Import Guidelines
+
+ALL imports should be at the TOP of the file, after any `if __name__ == "__main__":` guard (if present).
+
+| Do | Don't |
+|-----|-------|
+| Import at top | Import inside functions |
+| Use absolute imports | Lazy loading |
+| Use proper path deps | sys.path manipulation |
+
+**Exception:** Only use late imports when avoiding circular import issues.
 
 ### Package Updates Workflow
 
@@ -126,7 +153,49 @@ data = feed.get_data("XBTUSD")
 - **robo-trader**: Depends on advanced-ta, yfinance, ta
 - **advanced-ta**: No dependencies
 
-## Notes
+## Live Trader
+
+Automated trading via Kraken API with FastAPI backend + Streamlit UI.
+
+### Architecture
+
+```
+Port 8503 (API):  FastAPI - holds all logic, talks to Kraken
+Port 8501 (UI):    Streamlit - dumb frontend, calls API
+Cron:              Hits /trading-cycle every minute
+```
+
+### Running
+
+```bash
+# Terminal 1: API (port 8503)
+cd live_trader
+poetry run uvicorn api:app --host 0.0.0.0 --port 8503
+
+# Terminal 2: UI (port 8501)
+cd live_trader
+poetry run streamlit run app.py
+```
+
+### API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/trading-cycle` | Run cycle (cron hits this) |
+| GET | `/status` | Current price, balance, config |
+| GET | `/logs` | Event logs with filtering |
+| GET | `/trades` | Trade history |
+| GET | `/config` | Get current config |
+| POST | `/config` | Update config |
+
+### Cron Setup
+
+```bash
+# Every minute
+* * * * * curl -X POST http://localhost:8503/trading-cycle
+```
+
+### Notes
 
 - **Data excluded**: Large files + potentially private (in .gitignore)
 - **Tests location**: robo-trader tests must run from robo-trader/ directory

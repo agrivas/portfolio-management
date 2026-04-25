@@ -116,6 +116,14 @@ class CCXTBroker(Broker):
         except ccxt.ExchangeError as e:
             raise Exception(f"Exchange error: {str(e)}")
 
+    def get_cash_balance(self, quote_currency: str) -> float:
+        balance = self.get_balance()
+        return balance.get('free', {}).get(quote_currency, 0.0)
+
+    def get_asset_balance(self, base_currency: str) -> float:
+        balance = self.get_balance()
+        return balance.get('free', {}).get(base_currency, 0.0)
+
     def _convert_order_type(self, order_type: str) -> str:
         order_type_map = {
             OrderType.MARKET: 'market',

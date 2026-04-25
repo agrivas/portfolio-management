@@ -99,6 +99,14 @@ class BacktestBroker(Broker):
         """Stub for backtest - returns local positions via portfolio."""
         return {}
 
+    def get_cash_balance(self, quote_currency: str) -> float:
+        """Stub for backtest - returns cash from balance."""
+        return self.cash
+
+    def get_asset_balance(self, base_currency: str) -> float:
+        """Stub for backtest - returns 0 for backtest."""
+        return 0.0
+
     def update(self, timestamp: datetime, prices: Dict[str, float]):
         self.current_timestamp = timestamp
         self.current_prices = prices

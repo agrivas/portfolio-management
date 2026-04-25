@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'robo-trader'))
-
 from robo_trader.strategy import Strategy
 from robo_trader.portfolio import Portfolio
 import pandas as pd
@@ -56,3 +52,5 @@ class AdxSmaCciStrategy(Strategy):
 
         if cci_bullish and sma_buy and strong_trend:
             portfolio.open_long(symbol, self.position_size, None, self.take_profit, self.stop_loss)
+        elif portfolio.is_long(symbol):
+            portfolio.close_long(symbol)

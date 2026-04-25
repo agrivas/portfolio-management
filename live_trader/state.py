@@ -10,9 +10,19 @@ STATE_DIR = Path(__file__).parent / "state"
 TRADE_LOG = STATE_DIR / "trade_log.csv"
 ERROR_LOG = STATE_DIR / "error_log.csv"
 EVENT_LOG = STATE_DIR / "event_log.csv"
-PORTFOLIO_STATE = STATE_DIR / "portfolio_state.json"
+PORTFOLIO_STATE = STATE_DIR / "portfolio.json"
 
 logger = logging.getLogger(__name__)
+
+def get_portfolio_state():
+    if not PORTFOLIO_STATE.exists():
+        return None
+    with open(PORTFOLIO_STATE) as f:
+        return json.load(f)
+
+def save_portfolio_state(state):
+    with open(PORTFOLIO_STATE, "w") as f:
+        json.dump(state, f, indent=4, default=str)
 
 def log_trade(symbol: str, side: str, quantity: float, price: float, status: str, order_id: str, error: str = ""):
     file_exists = TRADE_LOG.exists()
@@ -88,18 +98,3 @@ def get_error_log(limit: int = 50) -> list:
         reader = csv.DictReader(f)
         rows = list(reader)
     return rows[-limit:] if len(rows) > limit else rows
-
-def save_portfolio_state(cash: float, holdings: dict):
-    state = {
-        "cash": cash,
-        "holdings": holdings,
-        "updated_at": datetime.now().isoformat()
-    }
-    with open(PORTFOLIO_STATE, "w") as f:
-        json.dump(state, f, indent=2)
-
-def load_portfolio_state() -> Optional[dict]:
-    if not PORTFOLIO_STATE.exists():
-        return None
-    with open(PORTFOLIO_STATE) as f:
-        return json.load(f)

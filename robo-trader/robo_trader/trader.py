@@ -17,6 +17,49 @@ class Trader:
         self.portfolio = Portfolio(broker, initial_cash) if broker else None
         self.last_data_timestamp = None
 
+    def run_cycle(self) -> dict:
+        """
+        Execute a single trading cycle. For cron-triggered execution.
+        Returns dict with status, trades, and timestamp.
+        """
+        if not self.broker:
+            raise ValueError("Cannot run live trading without a broker.")
+        
+        current_data = self.feed.get_data(self.symbol)
+        if current_data.empty:
+            return {"status": "no_data", "message": "No data available"}
+        
+        if self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp:
+            self.last_data_timestamp = current_data['date'].max()
+            current_price = current_data['close'].iloc[-1]
+            
+            self.strategy.evaluate_market(self.symbol, current_data, self.portfolio)
+            self.portfolio.update(self.last_data_timestamp, {self.symbol: current_price})
+            
+            trades = []
+            for position in self.portfolio.positions:
+                if position.is_open and position.order_ids:
+                    last_order_id = position.order_ids[-1]
+                    order = self.portfolio.orders.get(last_order_id)
+                    if order:
+                        trades.append({
+                            "side": position.side.value,
+                            "quantity": position.quantity,
+                            "price": current_price,
+                            "order_id": last_order_id
+                        })
+            
+            return {
+                "status": "success",
+                "timestamp": self.last_data_timestamp.isoformat(),
+                "price": current_price,
+                "trades": trades,
+                "portfolio_cash": self.portfolio.cash,
+                "holdings": self.portfolio.asset_holdings
+            }
+        
+        return {"status": "no_new_data", "message": "No new data since last cycle"}
+
     def run(self):
         """
         Handle live trading by continuously processing the feed and executing trades through the portfolio.

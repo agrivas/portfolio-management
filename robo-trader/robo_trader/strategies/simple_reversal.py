@@ -1,7 +1,3 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'robo-trader'))
-
 from robo_trader.strategy import Strategy
 from robo_trader.portfolio import Portfolio
 import pandas as pd

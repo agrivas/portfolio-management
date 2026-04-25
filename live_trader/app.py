@@ -1,98 +1,70 @@
 import streamlit as st
 import pandas as pd
+import requests
 from datetime import datetime
+
+API_BASE = "http://localhost:8503"
 
 st.set_page_config(page_title="Live Trader", page_icon="📈", layout="wide")
 
-from config import load_config, save_config, get_kraken_credentials
-from state import get_trade_log, get_error_log, get_event_log, load_portfolio_state
-from strategies.loader import list_strategies
-from trader import run_trading_cycle
+if "auto_refresh" not in st.session_state:
+    st.session_state.auto_refresh = True
+
+
+def call_api(endpoint: str, method: str = "GET", data: dict = None):
+    url = f"{API_BASE}{endpoint}"
+    try:
+        if method == "GET":
+            return requests.get(url, timeout=30).json()
+        else:
+            return requests.post(url, json=data, timeout=60).json()
+    except Exception as e:
+        return {"error": str(e)}
+
 
 st.title("📈 Live Trader")
-
-config = load_config()
-
-if "last_update" not in st.session_state:
-    st.session_state.last_update = None
 
 tab1, tab2, tab3, tab4 = st.tabs(["Status", "Trades", "Config", "Logs"])
 
 with tab1:
     st.subheader("System Status")
     
+    status = call_api("/status")
+    
     col1, col2, col3 = st.columns(3)
     
-    status = "✅ Enabled" if config.get("enabled", False) else "⏸️ Disabled"
-    
-    try:
-        from robo_trader.brokers import CCXTBroker
-        api_key, secret = get_kraken_credentials()
-        if api_key and secret:
-            broker = CCXTBroker("kraken", api_key, secret)
-            current_price = broker.get_price(config.get("symbol", "ETH/BTC"))
-            balance = broker.get_balance()
-    except Exception as e:
-        current_price = 0
-        balance = None
+    settings = status.get("settings", {})
+    state = status.get("state", {})
     
     with col1:
-        st.metric("Pair", config.get("symbol", "ETH/GBP"))
+        st.metric("Pair", settings.get("symbol", "N/A"))
     with col2:
-        if current_price > 0:
-            st.metric("Price", f"{current_price:,.2f}")
-        else:
-            st.metric("Price", "N/A")
+        st.metric("Cash", f"£{state.get('cash', 0):.2f}" if state else "N/A")
     with col3:
-        st.metric("Status", status)
+        st.metric("Holdings", str(state.get("asset_holdings", {})) if state else "N/A")
     
     st.divider()
-    
-    # Portfolio Balance Table
-    st.subheader("Portfolio Balance")
-    if balance:
-        balance_data = []
-        for currency, free_amt in balance.get('free', {}).items():
-            if free_amt and free_amt > 0:
-                total_amt = balance.get('total', {}).get(currency, free_amt)
-                used_amt = balance.get('used', {}).get(currency, 0)
-                balance_data.append({
-                    "Currency": currency,
-                    "Available": f"{free_amt:.6f}",
-                    "Used": f"{used_amt:.6f}",
-                    "Total": f"{total_amt:.6f}"
-                })
-        
-        if balance_data:
-            st.dataframe(
-                pd.DataFrame(balance_data),
-                hide_index=True,
-                width='stretch'
-            )
-        else:
-            st.info("No funds available")
-    else:
-        st.info("Unable to fetch balance")
     
     st.divider()
     
     if st.button("🚀 Run Trading Cycle", type="primary"):
         with st.spinner("Running..."):
-            result = run_trading_cycle()
-            st.session_state.last_update = result
+            result = call_api("/trading-cycle", "POST")
             if result.get("status") == "success":
                 st.success(f"Cycle complete: {len(result.get('trades', []))} trades executed")
             else:
                 st.error(f"Error: {result.get('message', 'Unknown error')}")
+        st.rerun()
     
-    if st.session_state.last_update:
-        st.subheader("Last Result")
-        st.json(st.session_state.last_update)
+    st.divider()
+    
+    st.subheader("Last Result")
+    st.json(status)
 
 with tab2:
     st.subheader("Trade History")
     
-    trades = get_trade_log(100)
+    trades = call_api("/trades")
     if trades:
         st.dataframe(
             pd.DataFrame(trades),
@@ -105,60 +77,70 @@ with tab2:
 with tab3:
     st.subheader("Configuration")
     
+    config = call_api("/config") or {}
+    strategies = call_api("/strategies")
+    
+    if not config:
+        st.warning("No portfolio configured. Set your preferences below to create one.")
+    
     with st.form("config_form"):
         strategy = st.selectbox(
             "Strategy",
-            options=list_strategies(),
-            index=list_strategies().index(config.get("strategy", "adx_ema")) if config.get("strategy") in list_strategies() else 0
+            options=strategies,
+            index=strategies.index(config.get("strategy", "adx_ema")) if config.get("strategy") in strategies else 0
         )
         
         symbol = st.selectbox(
             "Symbol",
             options=["ETH/BTC", "ETH/GBP", "BTC/GBP", "SOL/BTC", "SOL/GBP"],
-            index=0
+            index=["ETH/BTC", "ETH/GBP", "BTC/GBP", "SOL/BTC", "SOL/GBP"].index(config.get("symbol", "ETH/GBP")) if config.get("symbol") in ["ETH/BTC", "ETH/GBP", "BTC/GBP", "SOL/BTC", "SOL/GBP"] else 1
         )
-        interval = st.selectbox("Interval", options=["1m", "5m", "15m", "1h", "4h", "1d"], index=2)
+        interval = st.selectbox("Interval", options=["1m", "5m", "15m", "1h", "4h", "1d"], index=["1m", "5m", "15m", "1h", "4h", "1d"].index(config.get("interval", "15m")) if config.get("interval") in ["1m", "5m", "15m", "1h", "4h", "1d"] else 2)
         
         col1, col2 = st.columns(2)
         with col1:
-            position_size = st.slider("Position Size %", 0.01, 1.0, config.get("position_size_pct", 0.25), 0.01)
+            position_size = st.slider("Position Size %", 0.01, 1.0, config.get("position_size_pct", 0.5), 0.01)
         with col2:
-            stop_pct = st.slider("Stop Loss %", 0.01, 0.10, config.get("stop_pct", 0.02), 0.01)
+            stop_pct = st.slider("Stop Loss %", 0.01, 0.10, config.get("stop_pct", 0.01), 0.01)
         
         col3, col4 = st.columns(2)
         with col3:
-            take_profit_pct = st.slider("Take Profit %", 0.02, 0.20, config.get("take_profit_pct", 0.06), 0.01)
-        with col4:
-            enabled = st.toggle("Enable Trading", value=config.get("enabled", False))
+            take_profit_pct = st.slider("Take Profit %", 0.02, 0.20, config.get("take_profit_pct", 0.1), 0.01)
         
         submitted = st.form_submit_button("Save Configuration")
         if submitted:
-            config["strategy"] = strategy
-            config["symbol"] = symbol
-            config["symbol_internal"] = symbol.replace("/", "")[:6]
-            config["interval"] = interval
-            config["position_size_pct"] = position_size
-            config["stop_pct"] = stop_pct
-            config["take_profit_pct"] = take_profit_pct
-            config["enabled"] = enabled
-            save_config(config)
-            st.success("Configuration saved!")
-            st.rerun()
+            result = call_api("/config", "POST", {
+                "strategy": strategy,
+                "symbol": symbol,
+                "interval": interval,
+                "position_size_pct": position_size,
+                "stop_pct": stop_pct,
+                "take_profit_pct": take_profit_pct
+            })
+            if result.get("success"):
+                st.success("Configuration saved!")
+                st.rerun()
+            else:
+                st.error(f"Error saving config: {result}")
 
 with tab4:
     st.subheader("Logs")
     
-    severity_filter = st.multiselect(
-        "Filter by severity",
-        options=["INFO", "WARNING", "ERROR"],
-        default=["INFO", "WARNING", "ERROR"]
-    )
+    col1, col2 = st.columns(2)
+    with col1:
+        severity_filter = st.multiselect(
+            "Filter by severity",
+            options=["INFO", "WARNING", "ERROR"],
+            default=["INFO", "WARNING", "ERROR"]
+        )
+    with col2:
+        limit = st.slider("Max logs", 10, 500, 100)
     
-    events = get_event_log(200)
-    if events:
-        df = pd.DataFrame(events)
-        if severity_filter:
-            df = df[df['severity'].isin(severity_filter)]
+    severity_param = ",".join(severity_filter) if severity_filter else None
+    logs = call_api(f"/logs?severity={severity_param}&limit={limit}")
+    
+    if logs:
+        df = pd.DataFrame(logs)
         st.dataframe(
             df,
             width='stretch',
@@ -168,10 +150,13 @@ with tab4:
         st.info("No events logged")
     
     st.divider()
-    
-    st.subheader("System Info")
-    portfolio = load_portfolio_state()
-    if portfolio:
-        st.json(portfolio)
-    else:
-        st.info("No portfolio state")
+
+
+auto_refresh = st.checkbox("Auto-refresh (every 60s)", value=st.session_state.auto_refresh)
+if auto_refresh != st.session_state.auto_refresh:
+    st.session_state.auto_refresh = auto_refresh
+
+if auto_refresh:
+    import time
+    time.sleep(60)
+    st.rerun()

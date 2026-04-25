@@ -1,4 +1,6 @@
 import streamlit as st
+import pages.indicators
+import pages.strategies
 
 st.set_page_config(
     page_title="Backtesting App",
@@ -11,6 +13,6 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Indicator Experiments", "Strategy Backtesting"])
 
 if page == "Indicator Experiments":
-    import pages.indicators as indicators_page
+    indicators_page.show()
 elif page == "Strategy Backtesting":
-    import pages.strategies as strategies_page
+    strategies_page.show()

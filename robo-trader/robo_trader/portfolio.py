@@ -38,7 +38,7 @@ class Position:
         self.close_price = close_price
 
 class Portfolio:
-    def __init__(self, broker: Broker, initial_cash: float = None, autosave: bool = True):
+    def __init__(self, broker: Broker, initial_cash: float = None, autosave: bool = True, save_dir: str = None):
         self.broker = broker
         self.autosave = autosave        
         self.cash = initial_cash
@@ -48,6 +48,7 @@ class Portfolio:
         self.positions: List[Position] = []
         self.valuation_history: List[Dict[str, float]] = []
         self.uuid = str(uuid.uuid4())
+        self.save_dir = save_dir or "portfolios"
 
     # Overrides
     def __str__(self):
@@ -151,6 +152,16 @@ class Portfolio:
     def is_long(self, symbol: str) -> bool:
         return symbol in self.asset_holdings and self.asset_holdings[symbol] > 0
     
+    def sync_from_broker(self, symbol: str):
+        base_currency = symbol.split("/")[0] if "/" in symbol else symbol
+        quote_currency = symbol.split("/")[1] if "/" in symbol else symbol
+        
+        self.cash = self.broker.get_cash_balance(quote_currency)
+        self.asset_holdings[base_currency] = self.broker.get_asset_balance(base_currency)
+        
+        if self.autosave:
+            self.save()
+    
     def save(self):
         state = {
             "cash": self.cash,
@@ -168,15 +179,18 @@ class Portfolio:
             "autosave": self.autosave
         }
         
-        # Create portfolios folder if it doesn't exist
-        os.makedirs('portfolios', exist_ok=True)
+        os.makedirs(self.save_dir, exist_ok=True)
         
-        filename = f"portfolios/portfolio_{self.uuid}.json"
+        filename = f"{self.save_dir}/portfolio.json"
         with open(filename, 'w') as f:
-            json.dump(state, f, indent=4, default=str)  # Use indent=4 for human-readable formatting and default=str to handle datetime objects
-
-    @staticmethod
-    def from_file(broker: Broker, filename: str) -> 'Portfolio':
+            json.dump(state, f, indent=4, default=str)
+    
+    @classmethod
+    def from_directory(cls, broker: Broker, directory: str) -> 'Portfolio':
+        filename = os.path.join(directory, "portfolio.json")
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"No portfolio.json found in {directory}")
+        
         with open(filename, 'r') as f:
             state = json.load(f)
         
@@ -194,6 +208,7 @@ class Portfolio:
         portfolio.valuation_history = state["valuation_history"]
         portfolio.uuid = state["uuid"]
         portfolio.autosave = state.get("autosave", True)
+        portfolio.save_dir = directory
         return portfolio
 
     def calculate_performance(self):

@@ -1,89 +1,36 @@
 import os
-import sys
-import importlib.util
-from typing import Dict, List, Any, Optional
+from pathlib import Path
+from typing import Dict
 from datetime import datetime, timedelta
 
 import pandas as pd
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'robo-trader'))
-
 from robo_trader.trader import Trader
-from robo_trader.feeds import KrakenCSVFeed, YFinanceFeed
-from robo_trader.portfolio import Portfolio
+from robo_trader.feeds import KrakenCSVFeed
 from robo_trader.brokers.backtest_broker import BacktestBroker
+from robo_trader.strategies import get_all_strategies
 
 
-STRATEGIES_DIR = os.path.join(os.path.dirname(__file__), '..', 'experiments', 'strategies')
-
-
-def discover_strategies() -> Dict[str, str]:
-    strategies = {}
-    if not os.path.exists(STRATEGIES_DIR):
-        return strategies
-
-    for filename in os.listdir(STRATEGIES_DIR):
-        if filename.endswith('.py') and not filename.startswith('_'):
-            name = filename[:-3]
-            strategies[name] = filename
-    return strategies
-
-
-def load_strategy_class(name: str):
-    filepath = os.path.join(STRATEGIES_DIR, f"{name}.py")
-    if not os.path.exists(filepath):
-        return None
-
-    spec = importlib.util.spec_from_file_location(name, filepath)
-    if spec is None or spec.loader is None:
-        return None
-
-    module = importlib.util.module_from_spec(spec)
-    try:
-        spec.loader.exec_module(module)
-    except Exception as e:
-        print(f"Error loading strategy {name}: {e}")
-        return None
-
-    for attr_name in dir(module):
-        attr = getattr(module, attr_name)
-        if isinstance(attr, type) and hasattr(attr, 'evaluate_market'):
-            if attr_name != 'Strategy' and not attr_name.startswith('_'):
-                return attr
-
-    return None
-
-
-def get_strategy_params(name: str) -> dict:
-    filepath = os.path.join(STRATEGIES_DIR, f"{name}.py")
-    if not os.path.exists(filepath):
-        return {}
-
-    spec = importlib.util.spec_from_file_location(name, filepath)
-    if spec is None or spec.loader is None:
-        return {}
-
-    module = importlib.util.module_from_spec(spec)
-    try:
-        spec.loader.exec_module(module)
-    except Exception:
-        return {}
-
-    return getattr(module, 'PARAMS', {})
+def get_strategy_class(name: str):
+    """Get a strategy class by name."""
+    from robo_trader.strategies import __all__ as strategies
+    module = __import__('robo_trader.strategies', fromlist=[name])
+    return getattr(module, name, None)
 
 
 def run_backtest(
     strategy_class,
     strategy_params: dict,
     data: pd.DataFrame,
+    symbol: str = 'ETHUSD',
+    timeframe: str = '15m',
     initial_cash: float = 10000,
     transaction_cost: float = 0.001,
     trailing_stop_penalty_relief: float = 0.75,
 ) -> dict:
     data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'kraken')
-    symbol = 'ETHUSD'
 
-    feed = KrakenCSVFeed(data_dir=data_dir, interval='15m')
+    feed = KrakenCSVFeed(data_dir=data_dir, interval=timeframe)
     strategy = strategy_class(strategy_params)
     backtest_broker = BacktestBroker(
         transaction_cost=transaction_cost,

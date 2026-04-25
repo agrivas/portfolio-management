@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas_ta as pta
+import numpy as np
 
 PARAMS = {
     'window': 48,
@@ -13,6 +14,8 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     overbought = params.get('overbought', PARAMS['overbought'])
 
     df['rsi'] = pta.rsi(df['close'], length=window)
+    if window > 0:
+        df.iloc[:window, df.columns.get_loc('rsi')] = np.nan
     
     df['rsi_oversold'] = df['rsi'] < oversold
     df['rsi_overbought'] = df['rsi'] > overbought

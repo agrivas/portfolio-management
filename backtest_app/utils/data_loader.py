@@ -1,12 +1,9 @@
 """Data loader - uses KrakenCSVFeed with hardcoded pairs."""
 import os
-import sys
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List
 
 import pandas as pd
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'robo-trader'))
 
 from robo_trader.feeds import KrakenCSVFeed
 
@@ -19,7 +16,6 @@ AVAILABLE_PAIRS = {
     'XBTUSD', 'XBTEUR', 'XBTGBP',
     'ETHUSD', 'ETHEUR', 'ETHGBP',
     'XRPUSD', 'XRPEUR', 'XRPGBP',
-    'BNBUSD', 'BNBEUR',
     'SOLUSD', 'SOLEUR', 'SOLGBP',
 }
 

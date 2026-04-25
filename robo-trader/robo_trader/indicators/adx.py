@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas_ta as pta
+import numpy as np
 
 PARAMS = {
     'length': 14,
@@ -13,10 +14,19 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     weak_threshold = params.get('weak_threshold', PARAMS['weak_threshold'])
 
     adx = pta.adx(df['high'], df['low'], df['close'], length=length)
-    if adx is not None and 'ADX_' + str(length) in adx.columns:
-        df['adx'] = adx['ADX_' + str(length)].ffill()
-        df['adx_neg'] = adx['ADXN_' + str(length)].ffill()
-        df['adx_pos'] = adx['ADXP_' + str(length)].ffill()
+    adx_col = 'ADX_' + str(length)
+    adxn_col = 'ADXN_' + str(length)
+    adxp_col = 'ADXP_' + str(length)
+    
+    if adx is not None and adx_col in adx.columns:
+        df['adx'] = adx[adx_col].ffill()
+        df['adx_neg'] = adx[adxn_col].ffill() if adxn_col in adx.columns else adx[adx_col] * 0
+        df['adx_pos'] = adx[adxp_col].ffill() if adxp_col in adx.columns else adx[adx_col] * 0
+        
+        warmup = length - 1
+        df.iloc[:warmup, df.columns.get_loc('adx')] = np.nan
+        df.iloc[:warmup, df.columns.get_loc('adx_neg')] = np.nan
+        df.iloc[:warmup, df.columns.get_loc('adx_pos')] = np.nan
         
         df['strong_trend'] = (df['adx'] > strong_threshold).fillna(False)
         df['weak_trend'] = (df['adx'] < weak_threshold).fillna(False)

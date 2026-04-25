@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas_ta as pta
+import numpy as np
 
 PARAMS = {
     'volume_sma_period': 10,
@@ -33,6 +34,11 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     df['climax_bullish'] = df['close'] > df['open']
     
     df['rsi'] = pta.rsi(df['close'], length=rsi_length)
+    df.iloc[:rsi_length, df.columns.get_loc('rsi')] = np.nan
+    
+    df.iloc[:volume_sma_period, df.columns.get_loc('volume_sma')] = np.nan
+    df.iloc[:volume_sma_period, df.columns.get_loc('volume_std')] = np.nan
+    df.iloc[:volume_sma_period, df.columns.get_loc('volume_threshold')] = np.nan
     
     buy_confirmed = pd.Series([False] * len(df), index=df.index)
     

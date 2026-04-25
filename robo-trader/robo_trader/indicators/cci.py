@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas_ta as pta
+import numpy as np
 
 PARAMS = {
     'length': 168,
@@ -13,6 +14,8 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     overbought_threshold = params.get('overbought_threshold', PARAMS['overbought_threshold'])
 
     df['cci'] = pta.cci(df['high'], df['low'], df['close'], length=length)
+    if length > 0:
+        df.iloc[:length, df.columns.get_loc('cci')] = np.nan
     
     df['cci_oversold'] = df['cci'] < oversold_threshold
     df['cci_overbought'] = df['cci'] > overbought_threshold

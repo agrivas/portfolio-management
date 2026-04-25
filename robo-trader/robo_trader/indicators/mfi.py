@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas_ta as pta
+import numpy as np
 
 PARAMS = {
     'length': 72,
@@ -11,6 +12,8 @@ def run(df: pd.DataFrame, params: dict) -> pd.DataFrame:
     oversold = params.get('oversold', PARAMS['oversold'])
 
     df['mfi'] = pta.mfi(df['high'], df['low'], df['close'], df['volume'], length=length)
+    if length > 0:
+        df.iloc[:length, df.columns.get_loc('mfi')] = np.nan
     
     df['mfi_oversold'] = df['mfi'] < oversold
     df['mfi_overbought'] = df['mfi'] > (100 - oversold)

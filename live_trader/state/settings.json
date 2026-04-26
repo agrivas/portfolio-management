@@ -1,0 +1,8 @@
+{
+    "strategy": "simple_reversal_strategy",
+    "symbol": "BTC/GBP",
+    "interval": "1h",
+    "position_size_pct": 0.1,
+    "stop_pct": 0.01,
+    "take_profit_pct": 0.05
+}

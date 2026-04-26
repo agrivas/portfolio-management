@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Live Trader API", version="1.0.0")
 
 from config import get_kraken_credentials
-from state import get_portfolio_state, save_portfolio_state, get_event_log, get_trade_log, log_event, PORTFOLIO_STATE
+from state import get_settings, save_settings, get_event_log, get_trade_log, log_event, SETTINGS_FILE, PORTFOLIO_FILE, is_trader_paused, set_trader_paused
 from trader import run_trading_cycle
 from strategies.loader import list_strategies
 
@@ -43,20 +43,37 @@ def trading_cycle():
 
 @app.get("/status")
 def status():
-    portfolio_state = get_portfolio_state()
+    settings = get_settings()
+    
+    portfolio_state = {}
+    if PORTFOLIO_FILE.exists():
+        with open(PORTFOLIO_FILE) as f:
+            portfolio_state = json.load(f)
     
     result = {
         "timestamp": datetime.now().isoformat(),
+        "running": not is_trader_paused(),
     }
     
-    if portfolio_state:
-        result["settings"] = portfolio_state.get("settings", {})
-        result["state"] = portfolio_state.get("state", {})
-    else:
-        result["settings"] = None
-        result["state"] = None
+    result["settings"] = settings if settings else {}
+    result["cash"] = portfolio_state.get("cash", 0)
+    result["holdings"] = portfolio_state.get("asset_holdings", {})
     
     return result
+
+
+@app.post("/trading/pause")
+def trading_pause():
+    set_trader_paused(True)
+    log_event("INFO", "TRADER", "Trader paused", "")
+    return {"success": True, "running": False}
+
+
+@app.post("/trading/start")
+def trading_start():
+    set_trader_paused(False)
+    log_event("INFO", "TRADER", "Trader started", "")
+    return {"success": True, "running": True}
 
 
 @app.get("/logs")
@@ -70,42 +87,26 @@ def logs(
         severities = severity.split(",") if "," in severity else [severity]
         events = [e for e in events if e.get("severity") in severities]
     
-    return events
+    return events if events else []
 
 
 @app.get("/trades")
 def trades(limit: int = Query(default=50)):
-    return get_trade_log(limit)
+    trades = get_trade_log(limit)
+    return trades if trades else []
 
 
 @app.get("/config")
 def get_config():
-    portfolio_state = get_portfolio_state()
-    if portfolio_state:
-        return portfolio_state.get("settings", {})
-    return {}
+    return get_settings()
 
 
 @app.post("/config")
 def update_config(config_update: ConfigUpdate):
-    portfolio_state = get_portfolio_state()
+    settings = get_settings()
     
-    if not portfolio_state:
-        portfolio_state = {
-            "uuid": "live-trader-v1",
-            "autosave": True,
-            "settings": {},
-            "state": {
-                "cash": 0,
-                "asset_holdings": {},
-                "orders": {},
-                "positions": [],
-                "valuation_history": [],
-                "processed_trades": []
-            }
-        }
-    
-    settings = portfolio_state.setdefault("settings", {})
+    if not settings:
+        settings = {}
     
     if config_update.strategy is not None:
         settings["strategy"] = config_update.strategy
@@ -120,8 +121,7 @@ def update_config(config_update: ConfigUpdate):
     if config_update.take_profit_pct is not None:
         settings["take_profit_pct"] = config_update.take_profit_pct
     
-    PORTFOLIO_STATE.parent.mkdir(parents=True, exist_ok=True)
-    save_portfolio_state(portfolio_state)
+    save_settings(settings)
     log_event("INFO", "CONFIG", "Settings updated", str(settings))
     return {"success": True, "settings": settings}
 

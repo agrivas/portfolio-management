@@ -7,6 +7,10 @@ CRON_COMMENT="# Live Trader API cron"
 CRON_ENTRY="* * * * * curl -X POST ${API_URL} 2>/dev/null"
 
 setup() {
+    if ! command -v crontab &> /dev/null; then
+        echo "Error: crontab not found. Install cron: apt-get install cron"
+        return 1
+    fi
     if crontab -l 2>/dev/null | grep -q "Live Trader API cron"; then
         echo "Cron already configured for Live Trader"
         return
@@ -22,6 +26,10 @@ show() {
 }
 
 remove() {
+    if ! command -v crontab &> /dev/null; then
+        echo "Error: crontab not found. Install cron: apt-get install cron"
+        return 1
+    fi
     crontab -l 2>/dev/null | grep -v "Live Trader API cron" | grep -v "trading-cycle" | crontab -
     echo "Cron removed"
 }

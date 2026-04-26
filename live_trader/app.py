@@ -31,30 +31,54 @@ with tab1:
     
     status = call_api("/status")
     
-    col1, col2, col3 = st.columns(3)
-    
+    is_running = status.get("running", False)
     settings = status.get("settings", {})
-    state = status.get("state", {})
+    
+    col0, col1, col2, col3 = st.columns([1, 3, 3, 3])
+    
+    with col0:
+        if is_running:
+            st.markdown("🟢 **RUNNING**")
+        else:
+            st.markdown("🔴 **PAUSED**")
     
     with col1:
         st.metric("Pair", settings.get("symbol", "N/A"))
     with col2:
-        st.metric("Cash", f"£{state.get('cash', 0):.2f}" if state else "N/A")
+        st.metric("Cash", f"£{status.get('cash', 0):.2f}")
     with col3:
-        st.metric("Holdings", str(state.get("asset_holdings", {})) if state else "N/A")
+        st.metric("Holdings", str(status.get("holdings", {})))
     
     st.divider()
     
-    st.divider()
+    col_btn1, col_btn2 = st.columns(2)
     
-    if st.button("🚀 Run Trading Cycle", type="primary"):
-        with st.spinner("Running..."):
-            result = call_api("/trading-cycle", "POST")
-            if result.get("status") == "success":
-                st.success(f"Cycle complete: {len(result.get('trades', []))} trades executed")
-            else:
-                st.error(f"Error: {result.get('message', 'Unknown error')}")
-        st.rerun()
+    with col_btn1:
+        if is_running:
+            if st.button("⏸ Pause Trader", type="secondary"):
+                result = call_api("/trading/pause", "POST")
+                if result.get("success"):
+                    st.rerun()
+                else:
+                    st.error(f"Error: {result}")
+        else:
+            if st.button("▶ Start Trader", type="primary"):
+                result = call_api("/trading/start", "POST")
+                if result.get("success"):
+                    st.rerun()
+                else:
+                    st.error(f"Error: {result}")
+    
+    with col_btn2:
+        if st.button("🔄 Run Trading Cycle", type="secondary"):
+            with st.spinner("Running..."):
+                result = call_api("/trading-cycle", "POST")
+                if result.get("status") in ("success", "read_only"):
+                    mode = "normal" if result.get("status") == "success" else "read-only"
+                    st.success(f"Cycle complete ({mode}): {len(result.get('trades', []))} trades")
+                else:
+                    st.error(f"Error: {result.get('message', 'Unknown error')}")
+            st.rerun()
     
     st.divider()
     
@@ -99,13 +123,13 @@ with tab3:
         
         col1, col2 = st.columns(2)
         with col1:
-            position_size = st.slider("Position Size %", 0.01, 1.0, config.get("position_size_pct", 0.5), 0.01)
+            position_size = st.slider("Position Size", 0.01, 1.0, config.get("position_size_pct", 0.5), 0.01)
         with col2:
-            stop_pct = st.slider("Stop Loss %", 0.01, 0.10, config.get("stop_pct", 0.01), 0.01)
+            stop_pct = st.slider("Stop Loss", 0.01, 0.10, config.get("stop_pct", 0.01), 0.01)
         
         col3, col4 = st.columns(2)
         with col3:
-            take_profit_pct = st.slider("Take Profit %", 0.02, 0.20, config.get("take_profit_pct", 0.1), 0.01)
+            take_profit_pct = st.slider("Take Profit", 0.02, 0.20, config.get("take_profit_pct", 0.1), 0.01)
         
         submitted = st.form_submit_button("Save Configuration")
         if submitted:

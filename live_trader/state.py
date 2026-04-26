@@ -10,19 +10,30 @@ STATE_DIR = Path(__file__).parent / "state"
 TRADE_LOG = STATE_DIR / "trade_log.csv"
 ERROR_LOG = STATE_DIR / "error_log.csv"
 EVENT_LOG = STATE_DIR / "event_log.csv"
-PORTFOLIO_STATE = STATE_DIR / "portfolio.json"
+SETTINGS_FILE = STATE_DIR / "settings.json"
+PORTFOLIO_FILE = STATE_DIR / "portfolio.json"
 
 logger = logging.getLogger(__name__)
 
-def get_portfolio_state():
-    if not PORTFOLIO_STATE.exists():
-        return None
-    with open(PORTFOLIO_STATE) as f:
+TRADER_PAUSED = True
+
+def is_trader_paused() -> bool:
+    return TRADER_PAUSED
+
+def set_trader_paused(paused: bool):
+    global TRADER_PAUSED
+    TRADER_PAUSED = paused
+
+def get_settings():
+    if not SETTINGS_FILE.exists():
+        return {}
+    with open(SETTINGS_FILE) as f:
         return json.load(f)
 
-def save_portfolio_state(state):
-    with open(PORTFOLIO_STATE, "w") as f:
-        json.dump(state, f, indent=4, default=str)
+def save_settings(settings):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings, f, indent=4, default=str)
 
 def log_trade(symbol: str, side: str, quantity: float, price: float, status: str, order_id: str, error: str = ""):
     file_exists = TRADE_LOG.exists()

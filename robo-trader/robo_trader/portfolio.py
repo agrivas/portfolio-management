@@ -117,7 +117,7 @@ class Portfolio:
 
     def update(self, time: datetime, prices: Dict[str, float] = None):
         self._update_orders()
-
+        
         # Update valuation history on every update
         current_valuation = self.get_valuation(time, prices)
         self.valuation_history.append({
@@ -152,7 +152,7 @@ class Portfolio:
     def is_long(self, symbol: str) -> bool:
         return symbol in self.asset_holdings and self.asset_holdings[symbol] > 0
     
-    def sync_from_broker(self, symbol: str):
+    def sync_holdings_from_broker(self, symbol: str):
         base_currency = symbol.split("/")[0] if "/" in symbol else symbol
         quote_currency = symbol.split("/")[1] if "/" in symbol else symbol
         

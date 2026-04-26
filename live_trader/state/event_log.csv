@@ -8,3 +8,204 @@ datetime,severity,event_type,message,details
 2026-04-24T00:40:53.083829,INFO,CONFIG,Trading parameters,"position_size_pct=0.5, stop_pct=0.01, take_profit_pct=0.1"
 2026-04-24T00:40:57.139056,INFO,BROKER_SYNC,Balance fetched,"free={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}, total={'BABY': 0.83855, 'EUR.HOLD': 0.0, 'BTC': 0.00150673, 'GBP': 7.6}"
 2026-04-24T00:40:57.154376,INFO,BROKER_SYNC,GBP balance,available=7.6
+2026-04-26T10:24:04.195471,INFO,CONFIG,Settings updated,"{'strategy': 'simple_reversal_strategy', 'symbol': 'BTC/GBP', 'interval': '1h', 'position_size_pct': 0.1, 'stop_pct': 0.01, 'take_profit_pct': 0.05}"
+2026-04-26T10:25:01.890376,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:25:02.306636,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:25:02.345732,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:26:01.415531,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:26:01.435211,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:26:01.462125,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:27:01.536191,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:27:01.557257,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:27:01.584006,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:28:01.651483,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:28:01.669769,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:28:01.697062,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:29:01.776875,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:29:01.799497,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:29:01.824165,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:30:01.894109,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:30:01.913831,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:30:01.939753,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:31:02.012661,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:31:02.032651,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:31:02.058139,ERROR,CYCLE_FAILED,Trading cycle exception,error='cash'
+2026-04-26T10:47:01.433755,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:47:01.455891,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:47:01.473916,ERROR,PORTFOLIO,Portfolio not found,No portfolio.json found in /workspaces/portfolio-management/live_trader/state
+2026-04-26T10:48:01.544890,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:48:01.566950,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:48:01.583170,ERROR,PORTFOLIO,Portfolio not found,No portfolio.json found in /workspaces/portfolio-management/live_trader/state
+2026-04-26T10:49:01.646793,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:49:01.669695,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:49:01.685457,ERROR,PORTFOLIO,Portfolio not found,No portfolio.json found in /workspaces/portfolio-management/live_trader/state
+2026-04-26T10:50:01.761911,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:50:01.781174,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:50:01.797013,ERROR,PORTFOLIO,Portfolio not found,No portfolio.json found in /workspaces/portfolio-management/live_trader/state
+2026-04-26T10:51:01.865198,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:51:01.884753,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:51:01.898538,ERROR,PORTFOLIO,Portfolio not found,No portfolio.json found in /workspaces/portfolio-management/live_trader/state
+2026-04-26T10:52:02.021055,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:52:02.039856,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:52:02.060615,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:53:01.138003,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:53:01.158594,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:53:01.174244,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:54:01.244693,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:54:01.266604,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:54:01.289404,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:55:01.364117,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:55:01.385097,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:55:01.401756,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:56:01.477442,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:56:01.498274,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:56:01.515398,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:57:01.581893,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:57:01.601265,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:57:01.618831,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:58:01.690675,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:58:01.710902,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:58:01.725708,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T10:59:01.789563,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T10:59:01.807663,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T10:59:01.823679,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:00:01.892834,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:00:01.912600,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:00:01.931625,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:01:02.000577,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:01:02.020024,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:01:02.037338,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:02:01.104136,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:02:01.121928,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:02:01.139476,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:03:01.207352,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:03:01.226301,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:03:01.243196,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:04:01.310116,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:04:01.327898,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:04:01.344224,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:05:01.413110,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:05:01.431538,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:05:01.448734,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:06:01.515196,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:06:01.535388,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:06:01.551938,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:07:01.623243,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:07:01.643110,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:07:01.660675,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:08:01.726222,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:08:01.748255,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:08:01.764173,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:09:01.837649,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:09:01.857937,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:09:01.880691,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:10:01.953979,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:10:01.971344,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:10:02.002652,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:11:01.069135,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:11:01.085881,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:11:01.102460,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:12:01.166187,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:12:01.185914,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:12:01.204472,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:13:01.275405,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:13:01.295724,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:13:01.313005,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:14:01.385960,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:14:01.404560,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:14:01.423354,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:15:01.493530,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:15:01.513069,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:15:01.533209,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:16:01.596158,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:16:01.615050,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:16:01.633372,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:17:01.699274,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:17:01.719137,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:17:01.736338,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:18:01.813726,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:18:01.834023,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:18:01.853377,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:19:01.922834,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:19:01.940852,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:19:01.959264,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:20:02.027178,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:20:02.045682,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:20:02.064109,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:21:01.129192,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:21:01.146784,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:21:01.167099,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:22:01.233114,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:22:01.251311,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:22:01.266350,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:23:01.343569,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:23:01.360917,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:23:01.378595,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:24:01.445900,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:24:01.466848,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:24:01.486195,ERROR,CYCLE_FAILED,Trading cycle exception,error=CCXTBroker.get_balance() takes 1 positional argument but 2 were given
+2026-04-26T11:26:01.579301,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:26:01.598675,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:26:12.387856,ERROR,CYCLE_FAILED,Trading cycle exception,error='date'
+2026-04-26T11:27:01.475889,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:27:01.496099,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:27:04.990038,ERROR,CYCLE_FAILED,Trading cycle exception,error='date'
+2026-04-26T11:28:01.075127,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:28:01.092417,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:28:04.594982,ERROR,CYCLE_FAILED,Trading cycle exception,error='date'
+2026-04-26T11:29:01.675996,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:29:01.696489,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:29:05.195730,ERROR,CYCLE_FAILED,Trading cycle exception,error='date'
+2026-04-26T11:30:01.274387,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:30:01.295062,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:30:04.795503,ERROR,CYCLE_FAILED,Trading cycle exception,error='date'
+2026-04-26T11:32:01.886837,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:32:01.907643,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:33:01.645030,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:33:01.664247,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:34:01.280769,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:34:01.302248,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:35:01.921689,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:35:01.941268,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:36:01.569110,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:36:01.587708,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:37:01.209554,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:37:01.226942,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:39:01.905609,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:39:01.925781,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:40:01.651206,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:40:01.670629,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:41:01.276477,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:41:01.296334,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:42:01.921065,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:42:01.939959,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:43:01.575176,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:43:01.595357,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:44:01.211996,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:44:01.233236,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:45:01.866256,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:45:01.889362,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:46:01.502092,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:46:01.519069,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:47:01.129524,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:47:01.150199,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:48:01.784974,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:48:01.806178,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:49:01.426496,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:49:01.446921,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:50:01.069130,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:50:01.089789,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:51:01.692901,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:51:01.711546,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:52:01.386249,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:52:01.404743,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:53:01.068515,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:53:01.090031,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:54:01.737965,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:54:01.758194,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:56:01.390555,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:56:01.411187,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:57:01.154392,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:57:01.171856,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"
+2026-04-26T11:58:01.809435,INFO,CYCLE_READONLY,Starting trading cycle in read-only mode,"strategy=simple_reversal_strategy, symbol=BTC/GBP, interval=1h"
+2026-04-26T11:58:01.830439,INFO,CONFIG,Trading parameters,"position_size_pct=0.1, stop_pct=0.01, take_profit_pct=0.05"

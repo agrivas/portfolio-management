@@ -17,10 +17,13 @@ class Trader:
         self.portfolio = Portfolio(broker, initial_cash) if broker else None
         self.last_data_timestamp = None
 
-    def run_cycle(self) -> dict:
+    def run_cycle(self, read_only: bool = True) -> dict:
         """
         Execute a single trading cycle. For cron-triggered execution.
         Returns dict with status, trades, and timestamp.
+        
+        Args:
+            read_only: If True, fetch data and update portfolio but skip trade execution.
         """
         if not self.broker:
             raise ValueError("Cannot run live trading without a broker.")
@@ -29,14 +32,27 @@ class Trader:
         if current_data.empty:
             return {"status": "no_data", "message": "No data available"}
         
-        if self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp:
-            self.last_data_timestamp = current_data['date'].max()
+        if self.last_data_timestamp is None or current_data.index.max() > self.last_data_timestamp:
+            self.last_data_timestamp = current_data.index.max()
             current_price = current_data['close'].iloc[-1]
             
-            self.strategy.evaluate_market(self.symbol, current_data, self.portfolio)
+            if not read_only:
+                self.strategy.evaluate_market(self.symbol, current_data, self.portfolio)
+            
             self.portfolio.update(self.last_data_timestamp, {self.symbol: current_price})
+            self.portfolio.sync_holdings_from_broker(self.symbol)
             
             trades = []
+            if read_only:
+                return {
+                    "status": "read_only",
+                    "timestamp": self.last_data_timestamp.isoformat(),
+                    "price": current_price,
+                    "trades": trades,
+                    "portfolio_cash": self.portfolio.cash,
+                    "holdings": self.portfolio.asset_holdings
+                }
+            
             for position in self.portfolio.positions:
                 if position.is_open and position.order_ids:
                     last_order_id = position.order_ids[-1]
@@ -78,8 +94,8 @@ class Trader:
         while True:
             current_data = self.feed.get_data(self.symbol)
             if not current_data.empty:
-                if (self.last_data_timestamp is None or current_data['date'].max() > self.last_data_timestamp):
-                    self.last_data_timestamp = current_data['date'].max()
+                if (self.last_data_timestamp is None or current_data.index.max() > self.last_data_timestamp):
+                    self.last_data_timestamp = current_data.index.max()
                     self.strategy.evaluate_market(self, current_data, self.portfolio)
                     self.portfolio.update(self.last_data_timestamp, {self.symbol: current_data['close'].iloc[-1]})
             

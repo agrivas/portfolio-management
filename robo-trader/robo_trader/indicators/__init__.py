@@ -36,9 +36,10 @@ INDICATOR_PARAMS = {
     'run_vwap': vwap_params,
 }
 
+__all__ = list(INDICATOR_PARAMS.keys())
 
 def get_all_indicators():
-    return list(INDICATOR_PARAMS.keys())
+    return __all__
 
 
 def get_indicator_params(runner_name: str) -> dict:

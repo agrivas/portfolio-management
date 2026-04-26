@@ -2,7 +2,7 @@
 name = "portfolio-management"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Argiris Grivas <argiris.grivas@gmail.com>"]
 package-mode = false
 
 [tool.poetry.dependencies]
@@ -22,6 +22,7 @@ pandas-ta = "^0.4.71b0"
 streamlit = "^1.28.0"
 fastapi = "^0.110.0"
 uvicorn = "^0.30.0"
+numpy = "^2.2.6"
 
 [tool.poetry.group.dev.dependencies]
 

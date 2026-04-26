@@ -40,8 +40,13 @@ Available trading pairs (for live trading via CCXT/Kraken):
 
 ## Development
 
+**CRITICAL RULES:**
+- **NEVER destroy the venv** (.venv) unless directly asked to do so
+- **robo-trader** and **advanced-ta** are included in the main project with `develop = true` - their changes are reflected automatically without reinstalling
+- Use **AT LEAST 10 minutes timeout** for any terminal command; if you think it will take longer (e.g., poetry install), prompt the user first
+
 ```bash
-# Install dependencies (allow up to 5 minutes)
+# Install dependencies (allow 5-10 minutes)
 poetry install
 
 # Run backtest app
@@ -50,8 +55,6 @@ cd backtest_app && poetry run streamlit run app.py
 # Run tests
 cd robo-trader && poetry run pytest
 ```
-
-**Note:** poetry install can take several minutes. Use a longer timeout if needed.
 
 ### Import Guidelines
 
@@ -69,25 +72,9 @@ ALL imports should be at the TOP of the file, after any `if __name__ == "__main_
 
 When modifying code in `robo-trader/` package (e.g., adding methods to brokers):
 
-1. **ALWAYS** run `poetry install` to sync changes to `.venv`
-2. **NEVER** manually copy files between `.venv` and source
-3. Test via `poetry run` commands, not direct python execution
-4. If changes don't appear, try: `rm -rf .venv && poetry install` (full reinstall)
-
-**Note**: Path dependencies sometimes cache stale. If code changes don't appear after install, force a full reinstall:
-```bash
-rm -rf .venv
-poetry install
-```
-
-Example:
-```bash
-# After editing robo-trader/robo_trader/brokers/ccxt_broker.py:
-poetry install  # Refreshes .venv with updated code
-
-# If that doesn't work:
-rm -rf .venv && poetry install
-```
+1. Changes to packages with `develop = true` are **automatically reflected** in the venv - no manual sync needed
+2. Test via `poetry run` commands, not direct python execution
+3. If changes don't appear, ask user before attempting full reinstall
 
 ## backtest_app
 
@@ -104,25 +91,62 @@ streamlit run app.py
 - **Indicator Experiments** - Test indicator combinations visually
 - **Strategy Backtesting** - Run strategy backtests with P&L
 
-### Adding New Experiments
+### Adding New Strategies
 
-**Indicators** (`backtest_app/experiments/indicators/`):
+New strategies are defined in `robo-trader/robo_trader/strategies/` and automatically discovered by the backtest app.
+
 ```python
-PARAMS = {'param1': 14, 'param2': 30}
+# robo-trader/robo_trader/strategies/my_strategy.py
+from robo_trader.strategy import Strategy
+from robo_trader.portfolio import Portfolio
+import pandas as pd
+
+PARAMS = {
+    'position_size': 1.0,
+    'rsi_length': 14,
+    'rsi_oversold': 30,
+}
+
+class MyStrategy(Strategy):
+    def __init__(self, params: dict):
+        super().__init__()
+        self.position_size = params.get('position_size', PARAMS['position_size'])
+        ...
+
+    def evaluate_market(self, symbol: str, prices: pd.DataFrame, portfolio: Portfolio):
+        # Trading logic
+        ...
+```
+
+Then add to `robo-trader/robo_trader/strategies/__init__.py`:
+```python
+from .my_strategy import MyStrategy, PARAMS as my_strategy_params
+# Add to STRATEGY_PARAMS dict
+# Add to __all__ via list(STRATEGY_PARAMS.keys())
+```
+
+### Adding New Indicators
+
+New indicators are defined in `robo-trader/robo_trader/indicators/` and automatically discovered by the backtest app.
+
+```python
+# robo-trader/robo_trader/indicators/my_indicator.py
+import pandas as pd
+
+PARAMS = {
+    'length': 14,
+    'threshold': 30,
+}
 
 def run(df, params):
-    # Compute indicators
-    df['rsi'] = ...
-    df['signal'] = (condition)
+    df['my_indicator'] = ...
     return df
 ```
 
-**Strategies** (`backtest_app/experiments/strategies/`):
+Then add to `robo-trader/robo_trader/indicators/__init__.py`:
 ```python
-class MyStrategy(Strategy):
-    def evaluate_market(self, symbol, prices, portfolio):
-        # Trading logic
-        portfolio.open_long(...)
+from .my_indicator import run as run_my_indicator, PARAMS as my_indicator_params
+# Add to INDICATOR_PARAMS dict
 ```
 
 ## Data Sources (IGNORED)

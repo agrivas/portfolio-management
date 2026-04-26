@@ -286,7 +286,7 @@ class Portfolio:
         std_downside_bh = downside_returns_bh.std()
         sortino_bh = (mean_ret_bh / std_downside_bh) * np.sqrt(252) if std_downside_bh > 0 else 0
 
-        # Expected Value (EV)
+        # Expected Value (EV) & Profit Factor
         closed_positions = [pos for pos in self.positions if not pos.is_open]
         if closed_positions:
             returns = [(pos.close_price - pos.open_price) / pos.open_price for pos in closed_positions]
@@ -295,15 +295,14 @@ class Portfolio:
             avg_win = np.mean(wins) if wins else 0
             avg_loss = abs(np.mean(losses)) if losses else 0
             ev = win_rate * avg_win - (1 - win_rate) * avg_loss if total_trades > 0 else 0
+            gross_profit = sum(wins) * len(closed_positions) * initial_portfolio_valuation
+            gross_loss = sum(losses) * len(closed_positions) * initial_portfolio_valuation
+            profit_factor = gross_profit / abs(gross_loss) if gross_loss != 0 else 0
         else:
             ev = 0
             avg_win = 0
             avg_loss = 0
-
-        # Profit Factor
-        gross_profit = sum(wins) * len(closed_positions) * initial_portfolio_valuation if wins else 0
-        gross_loss = sum(losses) * len(closed_positions) * initial_portfolio_valuation if losses else 0
-        profit_factor = gross_profit / abs(gross_loss) if gross_loss != 0 else 0
+            profit_factor = 0
 
         # Max Run-up
         portfolio_peak = df['portfolio_value'].max()

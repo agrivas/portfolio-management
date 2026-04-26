@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from datetime import datetime
 import logging
 
@@ -117,19 +116,17 @@ def show(symbol, timeframe, start_date, end_date):
 
         params = get_indicator_params(selected_runner)
         
-        if st.checkbox("Configure parameters", value=True, key="show_params"):
-            with st.expander("Parameters", expanded=True):
-                user_params = {}
-                for param_name, default_value in params.items():
-                    if isinstance(default_value, bool):
-                        user_params[param_name] = st.checkbox(param_name, default_value, key=f"p_{param_name}")
-                    elif isinstance(default_value, int):
-                        user_params[param_name] = st.number_input(param_name, value=default_value, step=1, key=f"p_{param_name}")
-                    elif isinstance(default_value, float):
-                        user_params[param_name] = st.number_input(param_name, value=float(default_value), step=0.1, key=f"p_{param_name}")
-                    else:
-                        user_params[param_name] = st.text_input(param_name, str(default_value), key=f"p_{param_name}")
-                params = user_params
+        user_params = {}
+        for param_name, default_value in params.items():
+            if isinstance(default_value, bool):
+                user_params[param_name] = st.checkbox(param_name, default_value, key=f"p_{param_name}")
+            elif isinstance(default_value, int):
+                user_params[param_name] = st.number_input(param_name, value=default_value, step=1, key=f"p_{param_name}")
+            elif isinstance(default_value, float):
+                user_params[param_name] = st.number_input(param_name, value=float(default_value), step=0.01, key=f"p_{param_name}")
+            else:
+                user_params[param_name] = st.text_input(param_name, str(default_value), key=f"p_{param_name}")
+        params = user_params
 
         col1, col2 = st.columns(2)
         use_candlestick = col1.checkbox("Candlestick", value=False)

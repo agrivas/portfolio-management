@@ -2,6 +2,9 @@
 data/
 portfolios/
 
+# Live trader state
+live_trader/state/
+
 # Python environments
 .venv/
 
